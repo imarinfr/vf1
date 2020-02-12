@@ -83,7 +83,7 @@ vfclusteranalysis <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2 
     GHT_SECTORS_NUM = 5
     SECTORS_LIM_NUM = 6
     GH_LIM_NUM = 2
-    SAMPLE_SIZE = 15
+    SAMPLE_SIZE = 10000
     SAMPLE_NUM = 500
     
     td.ctrl  <- gettd( vf.ctrl )
@@ -133,15 +133,34 @@ vfclusteranalysis <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2 
     
     for( sector in 1:GHT_SECTORS_NUM )
     {
-      sector.lims[ sector,"sum.sup99.5"] <- as.double( boot.ci( one.boot( sector.sums[ sector,"sum.sup", ], mean, R = 500 ), conf = 0.995, type = "norm")[[4]][3] )
-      sector.lims[ sector,"sum.inf99.5"] <- as.double( boot.ci( one.boot( sector.sums[ sector,"sum.inf", ], mean, R = 500 ), conf = 0.995, type = "norm")[[4]][2] )
-      sector.lims[ sector,3:4] <- as.double( boot.ci( one.boot( sector.sums[ sector,"up.down", ], mean, R = 500 ), conf = 0.995, type = "norm")[[4]][2:3] )
-      sector.lims[ sector,5:6] <- as.double( boot.ci( one.boot( sector.sums[ sector,"up.down", ], mean, R = 500 ), conf = 0.985, type = "norm")[[4]][2:3] ) 
-    }
+      #sector.lims[ sector,"sum.sup99.5"] <- as.double( boot.ci( one.boot( sector.sums[ sector,"sum.sup", ], mean, R = 500 ), conf = 0.995, type = "norm")[[4]][3] )
+      #sector.lims[ sector,"sum.inf99.5"] <- as.double( boot.ci( one.boot( sector.sums[ sector,"sum.inf", ], mean, R = 500 ), conf = 0.995, type = "norm")[[4]][2] )
+      #sector.lims[ sector,3:4] <- as.double( boot.ci( one.boot( sector.sums[ sector,"up.down", ], mean, R = 500 ), conf = 0.995, type = "norm")[[4]][2:3] )
+      #sector.lims[ sector,5:6] <- as.double( boot.ci( one.boot( sector.sums[ sector,"up.down", ], mean, R = 500 ), conf = 0.985, type = "norm")[[4]][2:3] )    
+      
+      # generate bootstrapped confidence limits for each sector sum and up-down
+      bs.lims.sum.sup   <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"sum.sup", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
+      bs.lims.sum.inf   <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"sum.inf", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
+      bs.lims.up.down99 <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"up.down", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
+      bs.lims.up.down97 <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"up.down", ], SAMPLE_SIZE), level = 0.97, method = "quantile" ) )
+      
+      sector.lims[ sector,"sum.sup99.5"] <- mean( bs.lims.sum.sup$X99.5. )
+      sector.lims[ sector,"sum.inf99.5"] <- mean( bs.lims.sum.inf$X99.5. )                
+      sector.lims[ sector,"up.down0.5"]  <- mean( bs.lims.up.down99$X0.5. )
+      sector.lims[ sector,"up.down99.5"] <- mean( bs.lims.up.down99$X99.5. )
+      sector.lims[ sector,"up.down1.5"]  <- mean( bs.lims.up.down97$X1.5. )
+      sector.lims[ sector,"up.down98.5"] <- mean( bs.lims.up.down97$X98.5. ) 
+      }
     
-    gh.lims[1,1:2] <- as.double( data.frame( boot.ci( one.boot( gh[ 1,"gh", ], mean, R = 500 ), conf = 0.995, type = "norm")[4] )[2:3] )
+    #gh.lims[1,1:2] <- as.double( data.frame( boot.ci( one.boot( gh[ 1,"gh", ], mean, R = 500 ), conf = 0.995, type = "norm")[4] )[2:3] )
+    bs.lims.gh <- do(SAMPLE_NUM) * suppressMessages( confint( resample( gh[ 1,"gh", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
+    gh.lims$gh99.5 <- mean( bs.lims.gh$X99.5. )
+    gh.lims$gh0.5 <- mean( bs.lims.gh$X0.5. )
     
     ght.lims = list( "gh" = gh.lims, "sector" = sector.lims )
+    
+    assign("sector.sums", sector.sums, envir = globalenv())
+    assign("cgh", gh, envir = globalenv())
     assign("ght.lims", ght.lims, envir = globalenv())
     #print(ght.lims)
   }
@@ -191,6 +210,8 @@ vfclusteranalysis <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2 
   
   return( result )
 }
+
+p <- function(data) as.double( suppressMessages(confint( data, level = 0.97, method = "quantile" ))[2] )
 
 #' Hoddap-Parrish-Anderson 2 criteria (HAP2)
 #'
@@ -456,16 +477,20 @@ ght <- function( vf, pd, pdp, lims, helper )
     sums[sector,"sum.inf"] <- sum( score[ helper[ which( helper$ght.sector == sector ), "refl" ] ] )
     sums[sector,"up.down"] <- sums[sector,"sum.sup"] - sums[sector,"sum.inf"]
   }
+  #print(gh)
   #print(sums)
   
   if( ( length( which( ( sums$up.down > lims$sector$up.down99.5 ) == TRUE ) ) > 0 ) ||
       ( length( which( ( sums$up.down < lims$sector$up.down0.5 ) == TRUE ) ) > 0 ) )
+  {
     return( "Outside normal limits" )
-  
+  }
       
   if( ( length( which( ( sums$sum.sup > lims$sector$sum.sup99.5 ) == TRUE ) ) > 0 ) ||
-      ( length( which( ( sums$sum.inf < lims$sector$sum.inf99.5 ) == TRUE ) ) > 0 ) )
+      ( length( which( ( sums$sum.inf > lims$sector$sum.inf99.5 ) == TRUE ) ) > 0 ) )
+  {
     return( "Outside normal limits" )
+  }
   
   if( ( length( which( ( sums$up.down > lims$sector$up.down98.5 ) == TRUE ) ) > 0 ) ||
       ( length( which( ( sums$up.down < lims$sector$up.down1.5 ) == TRUE ) ) > 0 ) )
