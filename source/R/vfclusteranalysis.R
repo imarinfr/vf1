@@ -13,6 +13,7 @@ vfclusteranalysis <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2 
   #  stop("mixed tperimetry types: use only one perimeter test type (e.g. p24d2)")
   library(simpleboot)
   library(boot)
+  library(mosaic)
   
   # obtain td, tdp, pd, pdp maps, and take out only needed columns
   #td  <- gettd(vfpwgSunyiu24d2[1,])
@@ -83,7 +84,7 @@ vfclusteranalysis <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2 
     GHT_SECTORS_NUM = 5
     SECTORS_LIM_NUM = 6
     GH_LIM_NUM = 2
-    SAMPLE_SIZE = 10000
+    SAMPLE_SIZE = 25
     SAMPLE_NUM = 500
     
     td.ctrl  <- gettd( vf.ctrl )
@@ -180,26 +181,27 @@ vfclusteranalysis <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2 
   rownames( result ) <- rownames( vf )
   
   # analyze vf for defect
-  for( i in 1:nrow( vf ) )
+  for( i in 1:nrow(vf_data) )
   {
     if( criteria == "all" )
-      result[i,] <- c( hap2( vf[i,], pdp[i,], SURR_MAP ), 
+      result[i,] <- c( hap2( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ), 
                        ukgts( vf[i,], td[i,], tdp[i,], SURR_MAP ), 
-                       ght( vf[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ), 
-                       foster( pdp[i,], SURR_MAP ), 
+                       ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ), 
+                       foster( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ), 
                        logts( td[i,], SURR_MAP ) )
     
     else if( criteria == "hap2" )
-      result[i,] <- hap2( vf[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
+      result[i,] <- hap2( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
     
     else if( criteria == "ukgts" )
       result[i,] <- ukgts( vf[i,], td[i,], tdp[i,], SURR_MAP )
     
     else if( criteria == "ght" )
-      result[i,] <- ght( vf[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
-    
+    {
+      result[i,] <- ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
+    }
     else if( criteria == "foster" )
-      result[i,] <- foster( vf[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
+      result[i,] <- foster( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
     
     else if( criteria == "logts" )
       result[i,] <- logts( td[i,], SURR_MAP )
@@ -211,7 +213,214 @@ vfclusteranalysis <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2 
   return( result )
 }
 
-p <- function(data) as.double( suppressMessages(confint( data, level = 0.97, method = "quantile" ))[2] )
+vfclusterverification <- function(vf = vf_d, SAMPLE_SIZE = 10000, criteria = "all", vf.ctrl = vfctrSunyiu24d2 )
+{
+  library(simpleboot)
+  library(boot)
+  library(mosaic)
+  
+  #vf_data = read.csv("GitHub/vf1/source/R/vf_data.csv")
+  #crit_res = read.csv("GitHub/vf1/source/R/crit1.csv")
+  ## obtain td, tdp, pd, pdp maps, and take out only needed columns
+  #vf_d  <- vf_data[which( colnames( vf_data ) == "vf.1")  : which( colnames( vf_data ) == "vf.54" )]
+  #dummy_vf = vfctrSunyiu24d2[1,]
+  #for( i in 1:(nrow(vf_data)-1))
+  #{
+  #  dummy_vf = rbind(dummy_vf, vfctrSunyiu24d2[1,])
+  #}
+  #dummy_vf[1:nrow(dummy_vf), 11:64] = vf_d
+  #vf_d = dummy_vf
+  #rm(dummy_vf)
+  #vf_d$eye = "OD"
+  
+  td  <- vf_data[which( colnames( vf_data ) == "td.1")  : which( colnames( vf_data ) == "td.54" )]
+  tdp <- vf_data[which( colnames( vf_data ) == "tdp.1") : which( colnames( vf_data ) == "tdp.54" )]
+  pd  <- vf_data[which( colnames( vf_data ) == "pd.1")  : which( colnames( vf_data ) == "pd.54" )]
+  pdp <- vf_data[which( colnames( vf_data ) == "pdp.1") : which( colnames( vf_data ) == "pdp.54" )]
+  
+  colnames(td) = colnames(vf)[11:64]
+  colnames(pd) = colnames(vf)[11:64]
+  colnames(tdp) = colnames(vf)[11:64]
+  colnames(pdp) = colnames(vf)[11:64]
+  
+  
+  # defines indices of surrounding points to each point on vf map
+  SURR_MAP <- data.frame(
+    "x" =          c(-9,-3,3,9,-15,-9,-3,3,9,15,-21,-15,-9,-3,3,9,15,21,-27,-21,-15,-9,-3,3,9,15,21,-27,-21,-15,-9,-3,3,9,15,21,-21,-15,-9,-3,3,9,15,21,-15,-9,-3,3,9,15,-9,-3,3,9),
+    "y" =          c(21,21,21,21,15,15,15,15,15,15,9,9,9,9,9,9,9,9,3,3,3,3,3,3,3,3,3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-9,-9,-9,-9,-9,-9,-9,-9,-15,-15,-15,-15,-15,-15,-21,-21,-21,-21),
+    "topleft" =    c(NA,NA,NA,NA,NA,NA,1,2,3,4,NA,NA,5,6,7,8,9,10,NA,NA,11,12,13,14,15,16,17,NA,19,20,21,22,23,24,25,26,28,29,30,31,32,33,34,35,37,38,39,40,41,42,45,46,47,48),
+    "top" =        c(NA,NA,NA,NA,NA,1,2,3,4,NA,NA,5,6,7,8,9,10,NA,NA,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,29,30,31,32,33,34,35,36,38,39,40,41,42,43,46,47,48,49),
+    "topright" =   c(NA,NA,NA,NA,1,2,3,4,NA,NA,5,6,7,8,9,10,NA,NA,11,12,13,14,15,16,17,18,NA,20,21,22,23,24,25,26,27,NA,30,31,32,33,34,35,36,NA,39,40,41,42,43,44,47,48,49,50),
+    "left" =       c(NA,1,2,3,NA,5,6,7,8,9,NA,11,12,13,14,15,16,17,NA,19,20,21,22,23,24,25,26,NA,28,29,30,31,32,33,34,35,NA,37,38,39,40,41,42,43,NA,45,46,47,48,49,NA,51,52,53),
+    "right" =      c(2,3,4,NA,6,7,8,9,10,NA,12,13,14,15,16,17,18,NA,20,21,22,23,24,25,26,27,NA,29,30,31,32,33,34,35,36,NA,38,39,40,41,42,43,44,NA,46,47,48,49,50,NA,52,53,54,NA),
+    "botleft" =    c(5,6,7,8,11,12,13,14,15,16,19,20,21,22,23,24,25,26,NA,28,29,30,31,32,33,34,35,NA,NA,37,38,39,40,41,42,43,NA,NA,45,46,47,48,49,50,NA,NA,51,52,53,54,NA,NA,NA,NA),
+    "bot" =        c(6,7,8,9,12,13,14,15,16,17,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,NA,37,38,39,40,41,42,43,44,NA,45,46,47,48,49,50,NA,NA,51,52,53,54,NA,NA,NA,NA,NA),
+    "botright" =   c(7,8,9,10,13,14,15,16,17,18,21,22,23,24,25,26,27,NA,29,30,31,32,33,34,35,36,NA,37,38,39,40,41,42,43,44,NA,45,46,47,48,49,50,NA,NA,51,52,53,54,NA,NA,NA,NA,NA,NA),
+    "refl" =       c(51,52,53,54,45,46,47,48,49,50,37,38,39,40,41,42,43,44,28,29,30,31,32,33,34,35,36,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA),
+    "ght.sector" = c(1,1,2,2,1,1,1,1,2,2,3,3,4,4,4,4,NA,NA,3,3,3,5,5,5,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA)
+  )
+  
+  if( ( criteria == "all") || ( criteria == "ght") )
+  { 
+    #' Calculate limits of normality as described in Asman & Heijl, Arch Opthalmol, 1992
+    #' 1. get about 200+ vfs of normal eyes, preferably 1 unique eye per patient
+    #' 2. select 500 random samples, each with 15 vfs, from the total 200+ vfs, making sure each sample has 1 unique eye per patient
+    #' 3. use the bootstrap method to find confidence limits for gh, sum.sup, sum.inf, up.down using the 500 random samples
+    
+    CTRL_VF_NUM = nrow(vf.ctrl)
+    SUMS_NUM = 3
+    GHT_SECTORS_NUM = 5
+    SECTORS_LIM_NUM = 6
+    GH_LIM_NUM = 2
+    #SAMPLE_SIZE = 10000
+    SAMPLE_NUM = 500
+    
+    td.ctrl  <- gettd( vf.ctrl )
+    pd.ctrl  <- getpd( td.ctrl )
+    pdp.ctrl <- getpdp( pd.ctrl )[which( colnames( vf.ctrl ) == "l1") : which( colnames( vf.ctrl ) == "l54" )]
+    pd.ctrl  <- pd.ctrl[which( colnames( vf.ctrl ) == "l1") : which( colnames( vf.ctrl ) == "l54" )]
+    
+    # data structures
+    sector.sums <- array(NA, c( GHT_SECTORS_NUM, SUMS_NUM, CTRL_VF_NUM ) )
+    colnames( sector.sums ) <- c( "sum.sup", "sum.inf", "up.down" )
+    
+    gh <- array(NA, c( 1, 1, CTRL_VF_NUM ) )
+    colnames( gh ) <- c( "gh" )
+    
+    for( v in 1:CTRL_VF_NUM )
+    {
+      scores <- pdp.ctrl[v,]
+      for( i in 1:length( pdp.ctrl[v,] ) )
+      {
+        if( !( is.na( pdp.ctrl[v,i] ) ) )
+        {
+          if( pdp.ctrl[v,i] > 5 )
+            scores[i] <- 0
+          else if( pdp.ctrl[v,i] > 2 )
+            scores[i] <- 2
+          else if( pdp.ctrl[v,i] > 1 )
+            scores[i] <- 5
+          else
+            scores[i] <- 10 * abs( pd.ctrl[v,i] / sunyiu_24d2$luts$pd["1%",i] )   
+        }
+      }
+      for( sector in 1:GHT_SECTORS_NUM )
+      {
+        sector.sums[ sector,"sum.sup",v ] <- sum( scores[ which( SURR_MAP$ght.sector == sector ) ] )
+        sector.sums[ sector,"sum.inf",v ] <- sum( scores[ SURR_MAP[ which( SURR_MAP$ght.sector == sector ), "refl" ] ] )
+        sector.sums[ sector,"up.down",v ] <- sector.sums[ sector,"sum.sup",v ] - sector.sums[ sector,"sum.inf",v ]
+      }
+      
+      gh[ 1,"gh", ] <- getgh( td.ctrl )
+    }
+    sector.lims <- data.frame( array( NA, c( GHT_SECTORS_NUM, SECTORS_LIM_NUM ) ) )
+    colnames( sector.lims ) <- c("sum.sup99.5", "sum.inf99.5", "up.down0.5", "up.down99.5", "up.down1.5", "up.down98.5" )
+    
+    gh.lims <- data.frame( array( NA, c( 1, GH_LIM_NUM ) ) )
+    colnames( gh.lims ) <- c( "gh0.5", "gh99.5" )
+    
+    for( sector in 1:GHT_SECTORS_NUM )
+    {
+      #sector.lims[ sector,"sum.sup99.5"] <- as.double( boot.ci( one.boot( sector.sums[ sector,"sum.sup", ], mean, R = SAMPLE_NUM ), conf = 0.995, type = "norm")[[4]][3] )
+      #sector.lims[ sector,"sum.inf99.5"] <- as.double( boot.ci( one.boot( sector.sums[ sector,"sum.inf", ], mean, R = SAMPLE_NUM ), conf = 0.995, type = "norm")[[4]][2] )
+      #sector.lims[ sector,3:4] <- as.double( boot.ci( one.boot( sector.sums[ sector,"up.down", ], mean, R = SAMPLE_NUM ), conf = 0.995, type = "norm")[[4]][2:3] )
+      #sector.lims[ sector,5:6] <- as.double( boot.ci( one.boot( sector.sums[ sector,"up.down", ], mean, R = SAMPLE_NUM ), conf = 0.985, type = "norm")[[4]][2:3] )    
+      
+      # generate bootstrapped confidence limits for each sector sum and up-down difference
+      bs.lims.sum.sup   <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"sum.sup", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
+      bs.lims.sum.inf   <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"sum.inf", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
+      bs.lims.up.down99 <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"up.down", ], SAMPLE_SIZE), level = 0.98, method = "quantile" ) )
+      bs.lims.up.down97 <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"up.down", ], SAMPLE_SIZE), level = 0.94, method = "quantile" ) )
+      
+      sector.lims[ sector,"sum.sup99.5"] <- mean( bs.lims.sum.sup$X99.5. )
+      sector.lims[ sector,"sum.inf99.5"] <- mean( bs.lims.sum.inf$X99.5. )                
+      sector.lims[ sector,"up.down0.5"]  <- mean( bs.lims.up.down99$X1. )
+      sector.lims[ sector,"up.down99.5"] <- mean( bs.lims.up.down99$X99. )
+      sector.lims[ sector,"up.down1.5"]  <- mean( bs.lims.up.down97$X3. )
+      sector.lims[ sector,"up.down98.5"] <- mean( bs.lims.up.down97$X97. ) 
+    }
+    #gh.lims[1,1:2] <- boot.ci( one.boot( gh[ 1,"gh", ], mean, R = SAMPLE_NUM ), conf = 0.995, type = "norm")[[4]][2:3]
+    bs.lims.gh <- do(SAMPLE_NUM) * suppressMessages( confint( resample( gh[ 1,"gh", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
+    gh.lims$gh99.5 <- mean( bs.lims.gh$X99.5. )
+    gh.lims$gh0.5 <- mean( bs.lims.gh$X0.5. )
+    
+    ght.lims = list( "gh" = gh.lims, "sector" = sector.lims )
+    
+    assign("ss", sector.sums, envir = globalenv())
+    assign("g", gh, envir = globalenv())
+    assign("ght.lims", ght.lims, envir = globalenv())
+    print(ght.lims)
+  }
+  
+  # implement results data frame
+  if( criteria == "all")
+  {
+    result <- data.frame( array( FALSE, c( nrow( vf ), 5 ) ) )
+    colnames( result ) = c( "hap2", "ukgts", "ght", "foster", "logts" )
+  }
+  else
+  {
+    result <- data.frame( array( FALSE, c( nrow( vf ), 1 ) ) )
+    colnames( result ) <- criteria
+  }
+  
+  rownames( result ) <- rownames( vf )
+  
+  # analyze vf for defect
+  print("ok")
+  for( i in 1:nrow(vf) )
+  {
+    #print(i)
+    if( criteria == "all" )
+      result[i,] <- c( hap2( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ), 
+                       ukgts( vf[i,], td[i,], tdp[i,], SURR_MAP ), 
+                       ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ), 
+                       foster( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ), 
+                       logts( td[i,], SURR_MAP ) )
+    
+    else if( criteria == "hap2" )
+      result[i,] <- hap2( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
+    
+    else if( criteria == "ukgts" )
+      result[i,] <- ukgts( vf[i,], td[i,], tdp[i,], SURR_MAP )
+    
+    else if( criteria == "ght" )
+    {
+      result[i,] <- ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
+      #if( ght( vf[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ) == "Outside normal limits")
+      #  result[i,] <- TRUE
+      #else
+      #  result[i,] <- FALSE
+    }
+    else if( criteria == "foster" )
+      result[i,] <- foster( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
+    
+    else if( criteria == "logts" )
+      result[i,] <- logts( td[i,], SURR_MAP )
+    
+    else
+      stop( "invalid criteria: select all (default), hap2, ukgts, ght, foster, or logts" )
+  }
+  
+  analysis = data.frame("n" = c(length(which(result$ght=="Outside normal limits")),
+                                length(which(result$ght=="Within normal limits")),
+                                length(which(result$ght=="Abnormally high sensitivity")),
+                                length(which(result$ght=="Borderline")),
+                                length(which(result$ght=="Borderline and general reduction in sensitivity")),
+                                length(which(result$ght=="General reduction in sensitivity"))
+                                ),
+                        "p" = c(length(which(vf_data[which(vf_data$ght=="Outside normal limits"),"ght"] == result[which(vf_data$ght=="Outside normal limits"),"ght"]))/length(which(vf_data$ght=="Outside normal limits")),
+                                length(which(vf_data[which(vf_data$ght=="Within normal limits"),"ght"] == result[which(vf_data$ght=="Within normal limits"),"ght"]))/length(which(vf_data$ght=="Within normal limits")),
+                                length(which(vf_data[which(vf_data$ght=="Abnormally high sensitivity"),"ght"] == result[which(vf_data$ght=="Abnormally high sensitivity"),"ght"]))/length(which(vf_data$ght=="Abnormally high sensitivity")),
+                                length(which(vf_data[which(vf_data$ght=="Borderline"),"ght"] == result[which(vf_data$ght=="Borderline"),"ght"]))/length(which(vf_data$ght=="Borderline")),
+                                length(which(vf_data[which(vf_data$ght=="Borderline and general reduction in sensitivity"),"ght"] == result[which(vf_data$ght=="Borderline and general reduction in sensitivity"),"ght"]))/length(which(vf_data$ght=="Borderline and general reduction in sensitivity")),
+                                length(which(vf_data[which(vf_data$ght=="General reduction in sensitivity"),"ght"] == result[which(vf_data$ght=="General reduction in sensitivity"),"ght"]))/length(which(vf_data$ght=="General reduction in sensitivity"))
+                                )
+                        )
+  print(analysis)
+  
+  return( result )
+}
 
 #' Hoddap-Parrish-Anderson 2 criteria (HAP2)
 #'
@@ -383,16 +592,16 @@ ukgts <- function( vf, td, tdp, helper )
   }
   
   # get index of first and last reflection points
-  if( vf$tpattern == "p24d2" )
-  {
+  #if( vf$tpattern == "p24d2" )
+  #{
     ir_i <- which( colnames( td ) == "l19" )
     ir_f <- which( colnames( td ) == "l23" )
-  }
-  else
-  {
-    ir_i <- which( colnames( td ) == "l29" )
-    ir_f <- which( colnames( td ) == "l33" )    
-  }
+  #}
+  #else
+  #{
+  #  ir_i <- which( colnames( td ) == "l29" )
+  #  ir_f <- which( colnames( td ) == "l33" )    
+  #}
 
   
   # check reflection points
@@ -441,36 +650,36 @@ ukgts <- function( vf, td, tdp, helper )
 #' @param lims limits of normality required for the GHT algorithm
 #' @param helper helper map tht specifies the surrounding points of each point
 #' @return BOOL Whether VF analysis resulted in a detection of a visual field defect
-ght <- function( vf, pd, pdp, lims, helper )
+ght <- function( vf, td, pd, pdp, lims, helper )
 {
   # calculation of general height gh of visual field
-  gh <- getgh( gettd( vf ) )
-  
+  gh <- getgh( cbind( vf[1,1:10], td ) )
+
   if( gh > lims$gh$gh99.5 )
-    return( "Abnormally High Sensitivity" )
-  
+  {
+    return( "Abnormally high sensitivity" )
+  }
   # calculation of point-by-point probability scores
+
   score <- pdp
   for( i in 1:length( pdp ) )
   {
-    if( !( is.na( pdp[i] ) ) )
-    {
-      if( pdp[i] > 5)
-        score[i] <- 0
-      else if( pdp[i] > 2)
-        score[i] <- 2
-      else if( pdp[i] > 1)
-        score[i] <- 5
-      else
-        score[i] <- 10 * abs( pd[i] )      
-    }
+    if( is.na( pdp[i] ) )
+      score[i] <- 0
+    else if( pdp[i] > 5)
+      score[i] <- 0
+    else if( pdp[i] > 2)
+      score[i] <- 2
+    else if( pdp[i] > 1)
+      score[i] <- 5
+    else
+      score[i] <- 10 * abs( pd[i] / sunyiu_24d2$luts$pd["1%",i] )      
   }
-  #print(score)
+  #  print(score)
   
   # calculation of the 10 sums of scores from the 10 sectors, and the 5 up-down sector differences
   sums <- data.frame( matrix( NA, nrow = 5, ncol = 3 ))
   colnames( sums ) <- c( "sum.sup", "sum.inf", "up.down")
-  
   for( sector in 1:5 )
   {
     sums[sector,"sum.sup"] <- sum( score[ which( helper$ght.sector == sector ) ] )
@@ -479,30 +688,29 @@ ght <- function( vf, pd, pdp, lims, helper )
   }
   #print(gh)
   #print(sums)
-  
   if( ( length( which( ( sums$up.down > lims$sector$up.down99.5 ) == TRUE ) ) > 0 ) ||
       ( length( which( ( sums$up.down < lims$sector$up.down0.5 ) == TRUE ) ) > 0 ) )
   {
     return( "Outside normal limits" )
   }
-      
+
   if( ( length( which( ( sums$sum.sup > lims$sector$sum.sup99.5 ) == TRUE ) ) > 0 ) ||
       ( length( which( ( sums$sum.inf > lims$sector$sum.inf99.5 ) == TRUE ) ) > 0 ) )
   {
     return( "Outside normal limits" )
   }
-  
+
   if( ( length( which( ( sums$up.down > lims$sector$up.down98.5 ) == TRUE ) ) > 0 ) ||
       ( length( which( ( sums$up.down < lims$sector$up.down1.5 ) == TRUE ) ) > 0 ) )
   {
     if( gh < lims$gh$gh0.5 )
-      return( "Borderline General Reduction in Sensitivity" )
+      return( "Borderline and general reduction in sensitivity" )
     else
       return( "Borderline" )
   }
 
   if( gh < lims$gh$gh0.5 )
-    return( "General Reduction of Sensitivity" )
+    return( "General reduction in sensitivity" )
   
   return( "Within normal limits")
 }
