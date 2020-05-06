@@ -1,28 +1,27 @@
-#' VF cluster analysis
-#'
-#' Analyse a VF for the presence of a VF defect based on the following criteria: Hodapp-Parish-Anderson 2 (HAP2), United Kington Glaucoma Treatment Study (UKGTS), Glaucoma Hemifield Test (GHT), Foster, and/or Low-pressure Glaucoma Treatment Study (LoGTS)
+#' @title VF cluster analysis
+#' @description Analyse a VF for the presence of a VF defect based on the following criteria: Hodapp-Parish-Anderson 2 (HAP2), United Kington Glaucoma Treatment Study (UKGTS), Glaucoma Hemifield Test (GHT), Foster, and/or Low-pressure Glaucoma Treatment Study (LoGTS)
 #' @param vf Visual fields to be analyzed as a standard vfobject
 #' @param criteria select to use all criteria (default), or a single criteria: hap2, ukgts, ght, foster, or logts
-#' @return results Whether VF analysis resulted in a detection of a VF defect
+#' @param calc_lims weather to calculate the limits of normality for Glaucoma Hemifield Test (GHT); limits are saved in a list in the global environment 
+#' @return result Whether VF analysis resulted in a detection of a VF defect
 #' @export
-vfclusteranalysis <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2 )
+vfclusteranalysis <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2, calc_lims = FALSE )
 {
-  if( nrow( vf ) < 1 )
-    stop("vf is empty")
-  #if( length( unique( vf$tperimetry ) ) > 1 ) 
-  #  stop("mixed tperimetry types: use only one perimeter test type (e.g. p24d2)")
-  library(simpleboot)
   library(boot)
   library(mosaic)
   
-  # obtain td, tdp, pd, pdp maps, and take out only needed columns
-  #td  <- gettd(vfpwgSunyiu24d2[1,])
+  if( nrow( vf ) < 1 )
+    stop("vf is empty")
+  if( nrow( vf.ctrl ) < 1 )
+    stop("control vf is empty")
+  
+  # compute td, pd maps
   td  <- gettd( vf )
   pd  <- getpd( td )
 
   #if( vf$tpattern[1] == "p24d2" )
   #{
-    # defines indices of surrounding points to each point on vf map
+    # defines the indices of surrounding points for each point on the 24-2 vf map
     SURR_MAP <- data.frame(
       "x" =          c(-9,-3,3,9,-15,-9,-3,3,9,15,-21,-15,-9,-3,3,9,15,21,-27,-21,-15,-9,-3,3,9,15,21,-27,-21,-15,-9,-3,3,9,15,21,-21,-15,-9,-3,3,9,15,21,-15,-9,-3,3,9,15,-9,-3,3,9),
       "y" =          c(21,21,21,21,15,15,15,15,15,15,9,9,9,9,9,9,9,9,3,3,3,3,3,3,3,3,3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-9,-9,-9,-9,-9,-9,-9,-9,-15,-15,-15,-15,-15,-15,-21,-21,-21,-21),
@@ -38,14 +37,16 @@ vfclusteranalysis <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2 
       "ght.sector" = c(1,1,2,2,1,1,1,1,2,2,3,3,4,4,4,4,NA,NA,3,3,3,5,5,5,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA)
     )
     
-    tdp <- gettdp( td )[which( colnames( vf ) == "l1") : which( colnames( vf ) == "l54" )]
-    pdp <- getpdp( pd )[which( colnames( vf ) == "l1") : which( colnames( vf ) == "l54" )]
-    td  <- td[which( colnames( vf ) == "l1") : which( colnames( vf ) == "l54" )]
-    pd  <- pd[which( colnames( vf ) == "l1") : which( colnames( vf ) == "l54" )]
+    # compute tdp, pdp, and extract relevant columns
+    range <- which( colnames( vf ) == "l1") : which( colnames( vf ) == "l54" )
+    tdp <- gettdp( td )[range]
+    pdp <- getpdp( pd )[range]
+    td  <-         td  [range]
+    pd  <-         pd  [range]
   #}
   #else if( vf$tpattern[1] == "p32d2" )
   #{
-  #  # defines indices of surrounding points to each point on vf map
+  #  # defines the indices of surrounding points for each point on the 32-2 vf map
   #  SURR_MAP <- data.frame(
   #    "x" =          c(-9,-3,3,9,-15,-9,-3,3,9,15,-21,-15,-9,-3,3,9,15,21,-27,-21,-15,-9,-3,3,9,15,21,27,-27,-21,-15,-9,-3,3,9,15,21,27,-27,-21,-15,-9,-3,3,9,15,21,27,-27,-21,-15,-9,-3,3,9,15,21,27,-21,-15,-9,-3,3,9,15,21,-15,-9,-3,3,9,15,-9,-3,3,9),
   #    "y" =	         c(27,27,27,27,21,21,21,21,21,21,15,15,15,15,15,15,15,15,9,9,9,9,9,9,9,9,9,9,3,3,3,3,3,3,3,3,3,3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-3,-9,-9,-9,-9,-9,-9,-9,-9,-9,-9,-15,-15,-15,-15,-15,-15,-15,-15,-21,-21,-21,-21,-21,-21,-27,-27,-27,-27),
@@ -59,49 +60,57 @@ vfclusteranalysis <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2 
   #    "botright" =   c(7,8,9,10,13,14,15,16,17,18,21,22,23,24,25,26,27,28,30,31,32,33,34,35,36,37,38,NA,40,41,42,43,44,45,46,47,48,NA,50,51,52,53,54,55,56,57,58,NA,59,60,61,62,63,64,65,66,NA,NA,67,68,69,70,71,72,NA,NA,73,74,75,76,NA,NA,NA,NA,NA,NA),
   #    "refl" =       c(73,74,75,76,67,68,69,70,71,72,59,60,61,62,63,64,65,66,49,50,51,52,53,54,55,56,57,58,39,40,41,42,43,44,45,46,47,48,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA),
   #    "ght.sector" = c(NA,NA,NA,NA,NA,1,1,2,2,NA,NA,1,1,1,1,2,2,NA,NA,3,3,4,4,4,4,NA,NA,NA,3,3,3,5,5,5,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA)
-  #    
   #  )		
   #  
-  #  tdp <- tdpval( td )[which( colnames( vf ) == "l1" ) : which( colnames( vf ) == "l76" )]
-  #  pdp <- getpdp( pd )[which( colnames( vf ) == "l1" ) : which( colnames( vf ) == "l76" )]
-  #  td  <- td[which( colnames( vf ) == "l1" ) : which( colnames( vf ) == "l76" )]
-  #  pd  <- pd[which( colnames( vf ) == "l1" ) : which( colnames( vf ) == "l76" )]
+  #  # compute tdp, pdp, and extract relevant columns
+  #  range <- which( colnames( vf ) == "l1" ) : which( colnames( vf ) == "l76" )
+  #  tdp <- tdpval( td )[range]
+  #  pdp <- getpdp( pd )[range]
+  #  td  <-         td  [range]
+  #  pd  <-         pd  [range]
   #}
   #else
   #{
   #  stop( "invalid tperimtery test type: pass only a p24d2 or p32d2 test type" )
   #}
  
-  if( ( criteria == "all") || ( criteria == "ght") )
+  if( ( calc_lims == TRUE) || !( exists( "ght.lims" ) ) )
   { 
     #' Calculate limits of normality as described in Asman & Heijl, Arch Opthalmol, 1992
-    #' 1. get about 200+ vfs of normal eyes, preferably 1 unique eye per patient
-    #' 2. select 500 random samples, each with 15 vfs, from the total 200+ vfs, making sure each sample has 1 unique eye per patient
-    #' 3. use the bootstrap method to find confidence limits for gh, sum.sup, sum.inf, up.down using the 500 random samples
+    #' 1. pass about 200+ vfs of normal eyes, preferably with 1 unique eye per patient, within the vf_ctrl parameter
+    #' 2. for each vf in vf_ctrl, calculate gh, sector sums, and sector up-down differences
+    #' 3. use the bootstrap method to calculate limits of normality for ght, sector sums, and sector up-down differences
+    #'    a. select 500 random samples from vf_ctrl, making sure each sample has 1 unique eye per patient
+    #'    b. for each sample, calculate the confidence intervals: 99% for gh, 99% for sector sums, 99% and 97% for sector up-down differences
+    #'    c. compute means of limits from the 500 samples
 
-    CTRL_VF_NUM = nrow(vf.ctrl)
-    SUMS_NUM = 3
+    # define constants
+    CTRL_VF_NUM     = nrow(vf.ctrl)
+    SUMS_NUM        = 3
     GHT_SECTORS_NUM = 5
     SECTORS_LIM_NUM = 6
-    GH_LIM_NUM = 2
-    SAMPLE_SIZE = 25
-    SAMPLE_NUM = 500
+    GH_LIM_NUM      = 2
+    SAMPLE_NUM      = 500
     
-    td.ctrl  <- gettd( vf.ctrl )
-    pd.ctrl  <- getpd( td.ctrl )
-    pdp.ctrl <- getpdp( pd.ctrl )[which( colnames( vf.ctrl ) == "l1") : which( colnames( vf.ctrl ) == "l54" )]
-    pd.ctrl  <- pd.ctrl[which( colnames( vf.ctrl ) == "l1") : which( colnames( vf.ctrl ) == "l54" )]
+    # compute td, pd, pdp maps, and extract relevant rows
+    td.ctrl  <- gettd ( vf.ctrl )
+    pd.ctrl  <- getpd ( td.ctrl )
+    pdp.ctrl <- getpdp( pd.ctrl )[range]
+    pd.ctrl  <-         pd.ctrl  [range]
     
-    # data structures
+    # define data structures for values of gh, sector sums, and sector up-down differences
     sector.sums <- array(NA, c( GHT_SECTORS_NUM, SUMS_NUM, CTRL_VF_NUM ) )
+    gh          <- array(NA, c(               1,        1, CTRL_VF_NUM ) )
+    
     colnames( sector.sums ) <- c( "sum.sup", "sum.inf", "up.down" )
+    colnames(          gh ) <- c( "gh" )
     
-    gh <- array(NA, c( 1, 1, CTRL_VF_NUM ) )
-    colnames( gh ) <- c( "gh" )
-    
+    # compute gh, sector sums, and sector up-down differences
     for( v in 1:CTRL_VF_NUM )
     {
       scores <- pdp.ctrl[v,]
+      scores[1,] <- 0
+      
       for( i in 1:length( pdp.ctrl[v,] ) )
       {
         if( !( is.na( pdp.ctrl[v,i] ) ) )
@@ -113,7 +122,7 @@ vfclusteranalysis <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2 
           else if( pdp.ctrl[v,i] > 1 )
             scores[i] <- 5
           else
-            scores[i] <- 10 * abs( pd.ctrl[v,i] )      
+            scores[i] <- 10 * abs( pd.ctrl[v,i] / normvals$sunyiu_24d2$luts$pd["1%",i] )  
         }
       }
       for( sector in 1:GHT_SECTORS_NUM )
@@ -126,82 +135,79 @@ vfclusteranalysis <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2 
       gh[ 1,"gh", ] <- getgh( td.ctrl )
     }
     
+    # define data structure for limits of gh, sector sums, and sector up-down differences
     sector.lims <- data.frame( array( NA, c( GHT_SECTORS_NUM, SECTORS_LIM_NUM ) ) )
+    gh.lims     <- data.frame( array( NA, c(               1,      GH_LIM_NUM ) ) )
+    
     colnames( sector.lims ) <- c("sum.sup99.5", "sum.inf99.5", "up.down0.5", "up.down99.5", "up.down1.5", "up.down98.5" )
+    colnames( gh.lims )     <- c( "gh0.5", "gh99.5" )
     
-    gh.lims <- data.frame( array( NA, c( 1, GH_LIM_NUM ) ) )
-    colnames( gh.lims ) <- c( "gh0.5", "gh99.5" )
-    
+    # compute limits of gh, sector sums, and sector up-down differences
     for( sector in 1:GHT_SECTORS_NUM )
     {
-      #sector.lims[ sector,"sum.sup99.5"] <- as.double( boot.ci( one.boot( sector.sums[ sector,"sum.sup", ], mean, R = 500 ), conf = 0.995, type = "norm")[[4]][3] )
-      #sector.lims[ sector,"sum.inf99.5"] <- as.double( boot.ci( one.boot( sector.sums[ sector,"sum.inf", ], mean, R = 500 ), conf = 0.995, type = "norm")[[4]][2] )
-      #sector.lims[ sector,3:4] <- as.double( boot.ci( one.boot( sector.sums[ sector,"up.down", ], mean, R = 500 ), conf = 0.995, type = "norm")[[4]][2:3] )
-      #sector.lims[ sector,5:6] <- as.double( boot.ci( one.boot( sector.sums[ sector,"up.down", ], mean, R = 500 ), conf = 0.985, type = "norm")[[4]][2:3] )    
-      
-      # generate bootstrapped confidence limits for each sector sum and up-down
-      bs.lims.sum.sup   <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"sum.sup", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
-      bs.lims.sum.inf   <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"sum.inf", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
-      bs.lims.up.down99 <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"up.down", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
-      bs.lims.up.down97 <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"up.down", ], SAMPLE_SIZE), level = 0.97, method = "quantile" ) )
-      
-      sector.lims[ sector,"sum.sup99.5"] <- mean( bs.lims.sum.sup$X99.5. )
-      sector.lims[ sector,"sum.inf99.5"] <- mean( bs.lims.sum.inf$X99.5. )                
-      sector.lims[ sector,"up.down0.5"]  <- mean( bs.lims.up.down99$X0.5. )
-      sector.lims[ sector,"up.down99.5"] <- mean( bs.lims.up.down99$X99.5. )
-      sector.lims[ sector,"up.down1.5"]  <- mean( bs.lims.up.down97$X1.5. )
-      sector.lims[ sector,"up.down98.5"] <- mean( bs.lims.up.down97$X98.5. ) 
-      }
+      sector.lims[ sector,"sum.sup99.5"] <- suppressMessages( as.double( boot( data=sector.sums[ sector,"sum.sup", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=2 )[1] ) )
+      sector.lims[ sector,"sum.inf99.5"] <- suppressMessages( as.double( boot( data=sector.sums[ sector,"sum.inf", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=2 )[1] ) )
+      sector.lims[ sector,"up.down99.5"] <- suppressMessages( as.double( boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=2 )[1] ) )
+      sector.lims[ sector,"up.down0.5" ] <- suppressMessages( as.double( boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=1 )[1] ) )
+      sector.lims[ sector,"up.down98.5"] <- suppressMessages( as.double( boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.97, k=2 )[1] ) )
+      sector.lims[ sector,"up.down1.5" ] <- suppressMessages( as.double( boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.97, k=1 )[1] ) )
+    }
+    gh.lims$gh99.5 <- suppressMessages( as.double(boot( data=gh[ 1,"gh", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=2)[1] ) )
+    gh.lims$gh0.5  <- suppressMessages( as.double(boot( data=gh[ 1,"gh", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=1)[1] ) )
     
-    #gh.lims[1,1:2] <- as.double( data.frame( boot.ci( one.boot( gh[ 1,"gh", ], mean, R = 500 ), conf = 0.995, type = "norm")[4] )[2:3] )
-    bs.lims.gh <- do(SAMPLE_NUM) * suppressMessages( confint( resample( gh[ 1,"gh", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
-    gh.lims$gh99.5 <- mean( bs.lims.gh$X99.5. )
-    gh.lims$gh0.5 <- mean( bs.lims.gh$X0.5. )
-    
+    # push data structure with all computed limits to the global environment
     ght.lims = list( "gh" = gh.lims, "sector" = sector.lims )
-    
-    assign("sector.sums", sector.sums, envir = globalenv())
-    assign("cgh", gh, envir = globalenv())
     assign("ght.lims", ght.lims, envir = globalenv())
-    #print(ght.lims)
   }
-
-  # implement results data frame  
+    
+  # implement the results data frame
   if( criteria == "all")
   {
     result <- data.frame( array( FALSE, c( nrow( vf ), 5 ) ) )
-    colnames( result ) = c( "hap2", "ukgts", "ght", "foster", "logts" )
+    colnames( result ) = c( "ght", "hap2", "foster", "ukgts", "logts" )
   }
   else
   {
     result <- data.frame( array( FALSE, c( nrow( vf ), 1 ) ) )
     colnames( result ) <- criteria
   }
-  
   rownames( result ) <- rownames( vf )
   
   # analyze vf for defect
-  for( i in 1:nrow(vf_data) )
+  for( i in 1:nrow(vf) )
   {
+    #print(i)
     if( criteria == "all" )
-      result[i,] <- c( hap2( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ), 
-                       ukgts( vf[i,], td[i,], tdp[i,], SURR_MAP ), 
-                       ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ), 
-                       foster( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ), 
-                       logts( td[i,], SURR_MAP ) )
+    {
+      ght <- ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
+      
+      result[i,] <- c( ght, 
+                       hap2  ( vf [i,], pdp[i,], ght, SURR_MAP ), 
+                       foster(          pdp[i,], ght, SURR_MAP ), 
+                       ukgts ( vf [i,], td [i,], tdp[i,], SURR_MAP ), 
+                       logts (          td [i,],          SURR_MAP ) 
+                     )
+    }
+    
+    else if( criteria == "ght" )
+      result[i,] <- ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )    
     
     else if( criteria == "hap2" )
-      result[i,] <- hap2( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
+    {
+      ght <- ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
+      
+      result[i,] <- hap2( vf[i,], pdp[i,], ght, SURR_MAP)
+    }
+    
+    else if( criteria == "foster" )
+    {
+      ght <- ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
+      
+      result[i,] <- foster( pdp[i,], ght, SURR_MAP )
+    } 
     
     else if( criteria == "ukgts" )
       result[i,] <- ukgts( vf[i,], td[i,], tdp[i,], SURR_MAP )
-    
-    else if( criteria == "ght" )
-    {
-      result[i,] <- ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
-    }
-    else if( criteria == "foster" )
-      result[i,] <- foster( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
     
     else if( criteria == "logts" )
       result[i,] <- logts( td[i,], SURR_MAP )
@@ -213,35 +219,83 @@ vfclusteranalysis <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2 
   return( result )
 }
 
-vfclusterverification <- function(vf = vf_d, SAMPLE_SIZE = 10000, criteria = "all", vf.ctrl = vfctrSunyiu24d2 )
+#' @title Limit
+#' @description Compute a confidence limit by calcualting the confidence interval at appropriate confidence level
+#' @param data a vector of data from which to compute confidence interval
+#' @param indices a variable that is required by the boot function, which will be used to sample the data parameter
+#' @param l confidence level
+#' @param k value of 1 will select the lower limit of the confidence interval, and value of 2 will select the upper limit of the confidence interval
+lim <- function( data, indices, l, k )
 {
-  library(simpleboot)
+  return( as.double( confint( data[indices], level=l, method="quantile" )[k] ) )
+}
+
+# testing function for a custom vf set - will not be in the final published code
+vfclusterverification <- function( vf = vftestHalifax, criteria = "all", vf.ctrl = vfctrSunyiu24d2 )
+{
+  library(visualFields)
+  #library(simpleboot)
   library(boot)
   library(mosaic)
+  library(BlandAltmanLeh)
   
-  #vf_data = read.csv("GitHub/vf1/source/R/vf_data.csv")
-  #crit_res = read.csv("GitHub/vf1/source/R/crit1.csv")
-  ## obtain td, tdp, pd, pdp maps, and take out only needed columns
-  #vf_d  <- vf_data[which( colnames( vf_data ) == "vf.1")  : which( colnames( vf_data ) == "vf.54" )]
-  #dummy_vf = vfctrSunyiu24d2[1,]
-  #for( i in 1:(nrow(vf_data)-1))
-  #{
-  #  dummy_vf = rbind(dummy_vf, vfctrSunyiu24d2[1,])
-  #}
-  #dummy_vf[1:nrow(dummy_vf), 11:64] = vf_d
-  #vf_d = dummy_vf
-  #rm(dummy_vf)
-  #vf_d$eye = "OD"
+  if( !exists("test_data") )
+  {
+    #test_data = read.csv("GitHub/vf1/source/R/test_data_all.csv")
+    test_data = read.csv("test_data_all.csv")
+    test_data$eye = as.character(test_data$eye)
+    na_rows = vector()
+    for(i in 1:nrow(test_data))
+    {
+      if( length(which(is.na(test_data[i,which( colnames( test_data ) == "vf.1") : which( colnames( test_data ) == "vf.54" )]))) == 54 )
+        na_rows = c(na_rows, i)
+      else if(length(which(is.na(test_data[i,which( colnames( test_data ) == "td.1") : which( colnames( test_data ) == "td.54" )]))) == 54)
+        na_rows = c(na_rows, i)
+      else if(length(which(is.na(test_data[i,which( colnames( test_data ) == "pd.1") : which( colnames( test_data ) == "pd.54" )]))) == 54)
+        na_rows = c(na_rows, i)
+      else if(is.na(test_data[i,"age"]))
+        na_rows = c(na_rows, i)
+      
+      if(test_data[i,"eye"] == "R")
+        test_data[i,"eye"] = "OD"
+      else
+        test_data[i,"eye"] = "OS"
+    }
+    test_data = test_data[-na_rows,]
+    
+    
+    # obtain td, tdp, pd, pdp maps, and take out only needed columns
+    vf_d  <- test_data[which( colnames( test_data ) == "vf.1") : which( colnames( test_data ) == "vf.54" )]
+    dummy_vf = vfctrSunyiu24d2[1,]
+    for( i in 1:(nrow(test_data)-1))
+    {
+      dummy_vf = rbind(dummy_vf, vfctrSunyiu24d2[1,])
+    }
+    dummy_vf[1:nrow(dummy_vf), 11:64] = vf_d
+    vf = dummy_vf
+    vf$eye = test_data$eye
+    vf$age = test_data$age
+    assign("test_data", test_data, envir=globalenv())
+    assign("vftestHalifax", vf, envir=globalenv())
+  }
   
-  td  <- vf_data[which( colnames( vf_data ) == "td.1")  : which( colnames( vf_data ) == "td.54" )]
-  tdp <- vf_data[which( colnames( vf_data ) == "tdp.1") : which( colnames( vf_data ) == "tdp.54" )]
-  pd  <- vf_data[which( colnames( vf_data ) == "pd.1")  : which( colnames( vf_data ) == "pd.54" )]
-  pdp <- vf_data[which( colnames( vf_data ) == "pdp.1") : which( colnames( vf_data ) == "pdp.54" )]
+  #td  <- test_data[which( colnames( test_data ) == "td.1")  : which( colnames( test_data ) == "td.54" )]
+  #tdp <- test_data[which( colnames( test_data ) == "tdp.1") : which( colnames( test_data ) == "tdp.54" )]
+  #pd  <- test_data[which( colnames( test_data ) == "pd.1")  : which( colnames( test_data ) == "pd.54" )]
+  #pdp <- test_data[which( colnames( test_data ) == "pdp.1") : which( colnames( test_data ) == "pdp.54" )]
+  #
+  #colnames(td) = colnames(vf)[11:64]
+  #colnames(pd) = colnames(vf)[11:64]
+  #colnames(tdp) = colnames(vf)[11:64]
+  #colnames(pdp) = colnames(vf)[11:64]
   
-  colnames(td) = colnames(vf)[11:64]
-  colnames(pd) = colnames(vf)[11:64]
-  colnames(tdp) = colnames(vf)[11:64]
-  colnames(pdp) = colnames(vf)[11:64]
+  range <- which( colnames( vf ) == "l1") : which( colnames( vf ) == "l54" )
+  td  <- gettd ( vf )
+  pd  <- getpd ( td )
+  tdp <- gettdp( td )[range]
+  pdp <- getpdp( pd )[range]
+  td  <-         td  [range]
+  pd  <-         pd  [range]
   
   
   # defines indices of surrounding points to each point on vf map
@@ -260,19 +314,14 @@ vfclusterverification <- function(vf = vf_d, SAMPLE_SIZE = 10000, criteria = "al
     "ght.sector" = c(1,1,2,2,1,1,1,1,2,2,3,3,4,4,4,4,NA,NA,3,3,3,5,5,5,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA)
   )
   
-  if( ( criteria == "all") || ( criteria == "ght") )
+  if( ( criteria == "all") || ( criteria == "ght") )# || ( criteria == "hap2") || ( criteria == "foster") )
   { 
-    #' Calculate limits of normality as described in Asman & Heijl, Arch Opthalmol, 1992
-    #' 1. get about 200+ vfs of normal eyes, preferably 1 unique eye per patient
-    #' 2. select 500 random samples, each with 15 vfs, from the total 200+ vfs, making sure each sample has 1 unique eye per patient
-    #' 3. use the bootstrap method to find confidence limits for gh, sum.sup, sum.inf, up.down using the 500 random samples
-    
     CTRL_VF_NUM = nrow(vf.ctrl)
     SUMS_NUM = 3
     GHT_SECTORS_NUM = 5
     SECTORS_LIM_NUM = 6
     GH_LIM_NUM = 2
-    #SAMPLE_SIZE = 10000
+    SAMPLE_SIZE = 10000
     SAMPLE_NUM = 500
     
     td.ctrl  <- gettd( vf.ctrl )
@@ -290,6 +339,7 @@ vfclusterverification <- function(vf = vf_d, SAMPLE_SIZE = 10000, criteria = "al
     for( v in 1:CTRL_VF_NUM )
     {
       scores <- pdp.ctrl[v,]
+      scores[1,] <- 0
       for( i in 1:length( pdp.ctrl[v,] ) )
       {
         if( !( is.na( pdp.ctrl[v,i] ) ) )
@@ -301,7 +351,8 @@ vfclusterverification <- function(vf = vf_d, SAMPLE_SIZE = 10000, criteria = "al
           else if( pdp.ctrl[v,i] > 1 )
             scores[i] <- 5
           else
-            scores[i] <- 10 * abs( pd.ctrl[v,i] / sunyiu_24d2$luts$pd["1%",i] )   
+            scores[i] <- 10 * abs( pd.ctrl[v,i] / normvals$sunyiu_24d2$luts$pd["1%",i] )  
+             
         }
       }
       for( sector in 1:GHT_SECTORS_NUM )
@@ -319,30 +370,42 @@ vfclusterverification <- function(vf = vf_d, SAMPLE_SIZE = 10000, criteria = "al
     gh.lims <- data.frame( array( NA, c( 1, GH_LIM_NUM ) ) )
     colnames( gh.lims ) <- c( "gh0.5", "gh99.5" )
     
+    # various methods to compute limits
     for( sector in 1:GHT_SECTORS_NUM )
     {
-      #sector.lims[ sector,"sum.sup99.5"] <- as.double( boot.ci( one.boot( sector.sums[ sector,"sum.sup", ], mean, R = SAMPLE_NUM ), conf = 0.995, type = "norm")[[4]][3] )
-      #sector.lims[ sector,"sum.inf99.5"] <- as.double( boot.ci( one.boot( sector.sums[ sector,"sum.inf", ], mean, R = SAMPLE_NUM ), conf = 0.995, type = "norm")[[4]][2] )
-      #sector.lims[ sector,3:4] <- as.double( boot.ci( one.boot( sector.sums[ sector,"up.down", ], mean, R = SAMPLE_NUM ), conf = 0.995, type = "norm")[[4]][2:3] )
-      #sector.lims[ sector,5:6] <- as.double( boot.ci( one.boot( sector.sums[ sector,"up.down", ], mean, R = SAMPLE_NUM ), conf = 0.985, type = "norm")[[4]][2:3] )    
+      #sector.lims[ sector,"sum.sup99.5"] <- as.double( boot.ci( one.boot( sector.sums[ sector,"sum.sup", ], mean, R = SAMPLE_NUM ), conf = 0.99, type = "norm")[[4]][3] )
+      #sector.lims[ sector,"sum.inf99.5"] <- as.double( boot.ci( one.boot( sector.sums[ sector,"sum.inf", ], mean, R = SAMPLE_NUM ), conf = 0.99, type = "norm")[[4]][2] )
+      #sector.lims[ sector,3:4] <- as.double( boot.ci( one.boot( sector.sums[ sector,"up.down", ], mean, R = SAMPLE_NUM ), conf = 0.99, type = "norm")[[4]][2:3] )
+      #sector.lims[ sector,5:6] <- as.double( boot.ci( one.boot( sector.sums[ sector,"up.down", ], mean, R = SAMPLE_NUM ), conf = 0.97, type = "norm")[[4]][2:3] )    
+      
+      sector.lims[ sector,"sum.sup99.5"] <- suppressMessages( as.double(boot( data=sector.sums[ sector,"sum.sup", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=2)[1]) )
+      sector.lims[ sector,"sum.inf99.5"] <- suppressMessages( as.double(boot( data=sector.sums[ sector,"sum.inf", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=2)[1]) )
+      sector.lims[ sector,"up.down99.5"] <- suppressMessages( as.double(boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=2)[1]) )
+      sector.lims[ sector,"up.down0.5" ] <- suppressMessages( as.double(boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=1)[1]) )
+      sector.lims[ sector,"up.down98.5"] <- suppressMessages( as.double(boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.97, k=2)[1]) )
+      sector.lims[ sector,"up.down1.5" ] <- suppressMessages( as.double(boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.97, k=1)[1]) )
       
       # generate bootstrapped confidence limits for each sector sum and up-down difference
-      bs.lims.sum.sup   <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"sum.sup", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
-      bs.lims.sum.inf   <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"sum.inf", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
-      bs.lims.up.down99 <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"up.down", ], SAMPLE_SIZE), level = 0.98, method = "quantile" ) )
-      bs.lims.up.down97 <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"up.down", ], SAMPLE_SIZE), level = 0.94, method = "quantile" ) )
-      
-      sector.lims[ sector,"sum.sup99.5"] <- mean( bs.lims.sum.sup$X99.5. )
-      sector.lims[ sector,"sum.inf99.5"] <- mean( bs.lims.sum.inf$X99.5. )                
-      sector.lims[ sector,"up.down0.5"]  <- mean( bs.lims.up.down99$X1. )
-      sector.lims[ sector,"up.down99.5"] <- mean( bs.lims.up.down99$X99. )
-      sector.lims[ sector,"up.down1.5"]  <- mean( bs.lims.up.down97$X3. )
-      sector.lims[ sector,"up.down98.5"] <- mean( bs.lims.up.down97$X97. ) 
+      #bs.lims.sum.sup   <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"sum.sup", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
+      #bs.lims.sum.inf   <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"sum.inf", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
+      #bs.lims.up.down99 <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"up.down", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
+      #bs.lims.up.down97 <- do(SAMPLE_NUM) * suppressMessages( confint( resample( sector.sums[ sector,"up.down", ], SAMPLE_SIZE), level = 0.97, method = "quantile" ) )
+      #
+      #sector.lims[ sector,"sum.sup99.5"] <- mean( bs.lims.sum.sup$X99.5.  )
+      #sector.lims[ sector,"sum.inf99.5"] <- mean( bs.lims.sum.inf$X99.5.  )            
+      #sector.lims[ sector,"up.down0.5" ] <- mean( bs.lims.up.down99$X0.5. )
+      #sector.lims[ sector,"up.down99.5"] <- mean( bs.lims.up.down99$X99.5.)
+      #sector.lims[ sector,"up.down1.5" ] <- mean( bs.lims.up.down97$X1.5. )
+      #sector.lims[ sector,"up.down98.5"] <- mean( bs.lims.up.down97$X98.5.)
     }
     #gh.lims[1,1:2] <- boot.ci( one.boot( gh[ 1,"gh", ], mean, R = SAMPLE_NUM ), conf = 0.995, type = "norm")[[4]][2:3]
-    bs.lims.gh <- do(SAMPLE_NUM) * suppressMessages( confint( resample( gh[ 1,"gh", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
-    gh.lims$gh99.5 <- mean( bs.lims.gh$X99.5. )
-    gh.lims$gh0.5 <- mean( bs.lims.gh$X0.5. )
+    
+    gh.lims$gh99.5 <- suppressMessages( as.double(boot( data=gh[ 1,"gh", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=2)[1] ) )
+    gh.lims$gh0.5  <- suppressMessages( as.double(boot( data=gh[ 1,"gh", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=1)[1] ) )
+    
+    #bs.lims.gh <- do(SAMPLE_NUM) * suppressMessages( confint( resample( gh[ 1,"gh", ], SAMPLE_SIZE), level = 0.99, method = "quantile" ) )
+    #gh.lims$gh99.5 <- mean( bs.lims.gh$X99.5. )
+    #gh.lims$gh0.5  <- mean( bs.lims.gh$X0.5. )
     
     ght.lims = list( "gh" = gh.lims, "sector" = sector.lims )
     
@@ -352,48 +415,54 @@ vfclusterverification <- function(vf = vf_d, SAMPLE_SIZE = 10000, criteria = "al
     print(ght.lims)
   }
   
-  # implement results data frame
+  # implement the results data frame
   if( criteria == "all")
   {
     result <- data.frame( array( FALSE, c( nrow( vf ), 5 ) ) )
-    colnames( result ) = c( "hap2", "ukgts", "ght", "foster", "logts" )
+    colnames( result ) = c( "ght", "hap2", "foster", "ukgts", "logts" )
   }
   else
   {
     result <- data.frame( array( FALSE, c( nrow( vf ), 1 ) ) )
     colnames( result ) <- criteria
   }
-  
   rownames( result ) <- rownames( vf )
   
   # analyze vf for defect
-  print("ok")
   for( i in 1:nrow(vf) )
   {
     #print(i)
     if( criteria == "all" )
-      result[i,] <- c( hap2( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ), 
-                       ukgts( vf[i,], td[i,], tdp[i,], SURR_MAP ), 
-                       ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ), 
-                       foster( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ), 
-                       logts( td[i,], SURR_MAP ) )
+    {
+      ght <- ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
+      
+      result[i,] <- c( ght, 
+                       hap2  ( vf [i,], pdp[i,], ght, SURR_MAP ), 
+                       foster(          pdp[i,], ght, SURR_MAP ), 
+                       ukgts ( vf [i,], td [i,], tdp[i,], SURR_MAP ), 
+                       logts (          td [i,],          SURR_MAP ) 
+      )
+    }
+    
+    else if( criteria == "ght" )
+      result[i,] <- ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )    
     
     else if( criteria == "hap2" )
-      result[i,] <- hap2( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
+    {
+      ght <- ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
+      
+      result[i,] <- hap2( vf[i,], pdp[i,], ght, SURR_MAP)
+    }
+    
+    else if( criteria == "foster" )
+    {
+      ght <- ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
+      
+      result[i,] <- foster( pdp[i,], ght, SURR_MAP )
+    } 
     
     else if( criteria == "ukgts" )
       result[i,] <- ukgts( vf[i,], td[i,], tdp[i,], SURR_MAP )
-    
-    else if( criteria == "ght" )
-    {
-      result[i,] <- ght( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
-      #if( ght( vf[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP ) == "Outside normal limits")
-      #  result[i,] <- TRUE
-      #else
-      #  result[i,] <- FALSE
-    }
-    else if( criteria == "foster" )
-      result[i,] <- foster( vf[i,], td[i,], pd[i,], pdp[i,], ght.lims, SURR_MAP )
     
     else if( criteria == "logts" )
       result[i,] <- logts( td[i,], SURR_MAP )
@@ -402,50 +471,135 @@ vfclusterverification <- function(vf = vf_d, SAMPLE_SIZE = 10000, criteria = "al
       stop( "invalid criteria: select all (default), hap2, ukgts, ght, foster, or logts" )
   }
   
-  analysis = data.frame("n" = c(length(which(result$ght=="Outside normal limits")),
-                                length(which(result$ght=="Within normal limits")),
-                                length(which(result$ght=="Abnormally high sensitivity")),
-                                length(which(result$ght=="Borderline")),
-                                length(which(result$ght=="Borderline and general reduction in sensitivity")),
-                                length(which(result$ght=="General reduction in sensitivity"))
-                                ),
-                        "p" = c(length(which(vf_data[which(vf_data$ght=="Outside normal limits"),"ght"] == result[which(vf_data$ght=="Outside normal limits"),"ght"]))/length(which(vf_data$ght=="Outside normal limits")),
-                                length(which(vf_data[which(vf_data$ght=="Within normal limits"),"ght"] == result[which(vf_data$ght=="Within normal limits"),"ght"]))/length(which(vf_data$ght=="Within normal limits")),
-                                length(which(vf_data[which(vf_data$ght=="Abnormally high sensitivity"),"ght"] == result[which(vf_data$ght=="Abnormally high sensitivity"),"ght"]))/length(which(vf_data$ght=="Abnormally high sensitivity")),
-                                length(which(vf_data[which(vf_data$ght=="Borderline"),"ght"] == result[which(vf_data$ght=="Borderline"),"ght"]))/length(which(vf_data$ght=="Borderline")),
-                                length(which(vf_data[which(vf_data$ght=="Borderline and general reduction in sensitivity"),"ght"] == result[which(vf_data$ght=="Borderline and general reduction in sensitivity"),"ght"]))/length(which(vf_data$ght=="Borderline and general reduction in sensitivity")),
-                                length(which(vf_data[which(vf_data$ght=="General reduction in sensitivity"),"ght"] == result[which(vf_data$ght=="General reduction in sensitivity"),"ght"]))/length(which(vf_data$ght=="General reduction in sensitivity"))
-                                )
-                        )
-  print(analysis)
+  # analyze results
+  if( ( criteria == "ght" ) || ( criteria == "all" ) )
+  {
+    ght_results = c("Outside normal limits","Borderline","Within normal limits","Abnormally high sensitivity","Borderline and general reduction in sensitivity","General reduction in sensitivity")
+    ght_analysis <- data.frame( array( 0, c( length(ght_results), length(ght_results) ) ) )
+    colnames( ght_analysis ) = ght_results
+    rownames( ght_analysis ) = ght_results
+    
+    for( i in 1:nrow(vf) )
+    {
+      row = as.character(test_data[i,"ght"])
+      col = result[i,"ght"]
+      ght_analysis[ row,col ] = ght_analysis[ row,col ] + 1
+    }
+    print(ght_analysis)
+    
+    print(c(length(which(result$ght=="Outside normal limits")),
+            length(which(result$ght=="Borderline")),
+            length(which(result$ght=="Within normal limits")),
+            length(which(result$ght=="Abnormally high sensitivity")),
+            length(which(result$ght=="Borderline and general reduction in sensitivity")),
+            length(which(result$ght=="General reduction in sensitivity"))
+    ))
+  }
+  
+  for(criteria in colnames(result))
+  {
+    print(paste0(criteria, " agreement: ", 
+                 length(which(test_data[which(test_data[,criteria]==TRUE),criteria] == result[which(test_data[,criteria]==TRUE),criteria])),
+                 "/",
+                 length(which(test_data[,criteria]==TRUE))))
+  }
+  bland.altman.plot(td_z, td_v, graph.sys = "base", xlab="mean of VFI", ylab="difference of VFI", main="VFI")
+  #bland.altman.plot(test_data$md.db, getgl( vftestHalifax )[,"tmd"], graph.sys = "base", xlab="mean of MD", ylab="difference of MD", main="MD")
+  #bland.altman.plot(test_data$psd.db, getgl( vftestHalifax )[,"psd"], graph.sys = "base", xlab="mean of PSD", ylab="difference of PSD", main="PSD")
+  #bland.altman.plot(100*test_data$vfi, getgl ( vftestHalifax )[,"vfi"], graph.sys = "base", xlab="mean of VFI", ylab="difference of VFI", main="VFI")
+  
+  td = gettd(vftestHalifax)
+  pd = getpd(td)
+  td_z = td_v = pd_z = pd_v = vector("numeric",0)
+  for(i in 1:54)
+  {
+    td_z = c(td_z,test_data[,which(colnames(test_data)=="vf.54")+i])
+    td_v = c(td_v,td[,10+i])
+    pd_z = c(pd_z,test_data[,which(colnames(test_data)=="tdp.54")+i])
+    pd_v = c(pd_v,pd[,10+i])
+  }
+
+  td <- bland.altman.stats(td_z,td_v)
+  pd <- bland.altman.stats(pd_z,pd_v)
+  md <- bland.altman.stats(test_data$md.db, getgl( vftestHalifax )[,"tmd"])
+  psd <- bland.altman.stats(test_data$psd.db, getgl( vftestHalifax )[,"psd"])
+  vfi <- bland.altman.stats(100*test_data$vfi, getgl( vftestHalifax )[,"vfi"])
+  library(tidyverse)
+  library(hexbin)
+
+  ggplot(data.frame(td$means,td$diffs), aes(x=td$means,y=td$diffs)) +
+    ggtitle("TD") + xlab("means of TD points") + ylab("difference of TD points = Zeiss - visualFields") +
+    geom_hex(bins = 70) +
+    scale_fill_continuous(type = "viridis") +
+    geom_hline(yintercept=td$upper.limit, color = "black", size=1) +
+    geom_hline(yintercept=td$mean.diffs, color = "black", size=1) +
+    geom_hline(yintercept=td$lower.limit, color = "black", size=1) +
+    theme_bw()
+  ggplot(data.frame(pd$means,pd$diffs), aes(x=pd$means,y=pd$diffs)) +
+    ggtitle("PD") + xlab("means of PD points") + ylab("difference of PD points = Zeiss - visualFields") +
+    geom_hex(bins = 70) +
+    scale_fill_continuous(type = "viridis") +
+    geom_hline(yintercept=pd$upper.limit, color = "black", size=1) +
+    geom_hline(yintercept=pd$mean.diffs, color = "black", size=1) +
+    geom_hline(yintercept=pd$lower.limit, color = "black", size=1) +
+    theme_bw()
+  ggplot(data.frame(md$means,md$diffs), aes(x=md$means,y=md$diffs)) +
+    ggtitle("MD") + xlab("means of MD") + ylab("difference of MD = Zeiss - visualFields") +
+    geom_hex(bins = 70) +
+    scale_fill_continuous(type = "gradient") +
+    geom_hline(yintercept=md$upper.limit, color = "black", size=1) +
+    geom_hline(yintercept=md$mean.diffs, color = "black", size=1) +
+    geom_hline(yintercept=md$lower.limit, color = "black", size=1) +
+    theme_bw()
+  ggplot(data.frame(psd$means,psd$diffs), aes(x=psd$means,y=psd$diffs)) +
+    ggtitle("PSD") + xlab("means of PSD") + ylab("difference of PSD = Zeiss - visualFields") +
+    geom_hex(bins = 70) +
+    scale_fill_continuous(type = "viridis") +
+    geom_hline(yintercept=psd$upper.limit, color = "black", size=1) +
+    geom_hline(yintercept=psd$mean.diffs, color = "black", size=1) +
+    geom_hline(yintercept=psd$lower.limit, color = "black", size=1) +
+    theme_bw()
+  ggplot(data.frame(vfi$means,vfi$diffs), aes(x=vfi$means,y=vfi$diffs)) +
+    ggtitle("VFI") + xlab("means of VFI") + ylab("difference of VFI = Zeiss - visualFields") +
+    geom_hex(bins = 70) +
+    scale_fill_continuous(type = "viridis") +
+    geom_hline(yintercept=vfi$upper.limit, color = "black", size=1) +
+    geom_hline(yintercept=vfi$mean.diffs, color = "black", size=1) +
+    geom_hline(yintercept=vfi$lower.limit, color = "black", size=1) +
+    theme_bw()
   
   return( result )
 }
 
-#' Hoddap-Parrish-Anderson 2 criteria (HAP2)
-#'
-#' Analyse a VF for the presence of a VF defect based on the following criteria: GHT outside normal limits; OR cluster of 3 points on the pattern deviation plot depressed at p<5%, one of which depressed at p<1%; OR PSD with p<5%
-#' @param vf visual fields to be analyzed as a standard vfovject
-#' @param pd pattern deviation map to be analyzed
+#' @title Hoddap-Parrish-Anderson 2 criteria (HAP2)
+#' @description Analyse a VF for the presence of a VF defect based on the following criteria: GHT "Outside normal limits" OR cluster of 3 points P<0.05 level, one of which at P<0.01 on the pattern deviation plot OR PSD at P<5%
+#' @param vf visual fields to be analyzed as a standard vfobject
 #' @param pdp pattern deviation probability map to be analyzed
-#' @param lims limits of normality for the GHT criteria
+#' @param ght result of the GHT
 #' @param helper helper map tht specifies the surrounding points of each point
 #' @return BOOL Whether VF analysis resulted in a detection of a visual field defect
-hap2 = function( vf, pd, pdp, lims, helper )
+hap2 <- function(vf, pdp, ght, helper )
 {
   print( "hap2")
-  # check PSD result of vf
-  if( getglp( getgl( vf ) )["psd"] <= 5 )
-    return( TRUE )  
   
   # check GHT result of vf
-  if( "Outside normal limits" == ght( vf, pd, pdp, lims, helper ) )
-    return( FALSE )
+  if( "Outside normal limits" == ght )
+  #if( g == "Outside normal limits" )
+    return( TRUE )
+  
+  # check PSD result of vf
+  psd <- getglp( getgl( vf ) )["psd"]
+  #return ( psd )
+  if( !is.na(psd) )
+  {
+    if( psd <= 5 )
+      return( TRUE )
+  }
   
   # get index of first and last surround map points
   m_i <- which( colnames( helper ) == "topleft" )
   m_f <- which( colnames( helper ) == "botright" )
-  
+
   # check cluster of 3 points
   # start by checking each point i in the pdp
   for( i in 1:length( pdp ) )
@@ -499,10 +653,9 @@ hap2 = function( vf, pd, pdp, lims, helper )
   return( FALSE )
 }
 
-#' United Kingdom Glaucoma Treatment Study criteria (UKGTS)
-#'
-#' Analyse a VF for the presence of a VF defect based on the following criteria: 2 or more contiguous points with P<0.01 loss or more; OR 3 or more contiguous points with P<0.05 loss or more; OR a 10-dB difference across the nasal horizontal midline at 2 or more adjacent points in the total deviation plot.
-#' @param vf visual field map to be analyzed
+#' @title United Kingdom Glaucoma Treatment Study criteria (UKGTS)
+#' @description Analyse a VF for the presence of a VF defect based on the following criteria: cluster of 2 points at P<0.01 level OR a cluster of 3 points at P<0.05 level OR a 10 dB difference across the nasal horizontal midline at 2 or more adjacent points in the total deviation plot.
+#' @param vf visual fields to be analyzed as a standard vfobject
 #' @param td total deviation map to be analyzed
 #' @param tdp total deviation probability map to be analyzed
 #' @param helper helper map tht specifies the surrounding points of each point
@@ -612,26 +765,23 @@ ukgts <- function( vf, td, tdp, helper )
     
     if( !( is.na( td[i] ) ) && !( is.na( td[ir] ) ) )
     {
-      if( abs( td[i] - td[ir] ) >= 5 )
+      if( abs( td[i] - td[ir] ) >= 10 )
       {
         print(paste0("i=", i, " ir=", ir))
         
-        for( m in m_i:m_f )
+        j <- helper[i,"right"]
+        
+        jr <- helper[j,"refl"]
+        
+        if( !( is.na( j ) ) && !( is.na( jr ) ) )
         {
-          j <- helper[i,m]
-          
-          jr <- helper[j,"refl"]
-          
-          if( !( is.na( j ) ) && !( is.na( jr ) ) )
+          if( abs( td[j] - td[jr] ) >= 10 )
           {
-            if( abs( td[j] - td[jr] ) >= 5 )
+            if( ( i != j ) && ( ir != j ) )
             {
-              if( ( i != j ) && ( ir != j ) )
-              {
-                print(paste0("j=", j, " jr=", jr))
-                
-                return( TRUE )
-              }
+              print(paste0("j=", j, " jr=", jr))
+              
+              return( TRUE )
             }
           }
         }
@@ -641,10 +791,10 @@ ukgts <- function( vf, td, tdp, helper )
   return(FALSE)
 }
 
-#' Glaucoma Hemifield Test criteria (GHT)
-#'
-#' Analyse a VF for the presence of a VF defect based on the following criteria: Glaucoma Hemifield Test (GHT) see Asman & Heijl Arch Ophthalmol - vol 110 1992
-#' @param vf visual fields to be analyzed as a standard vfovject
+#' @title Glaucoma Hemifield Test criteria (GHT)
+#' @description Analyse a VF for the presence of a VF defect based on the following criteria: Glaucoma Hemifield Test (GHT) see Asman & Heijl Arch Ophthalmol, vol 110, 1992
+#' @param vf visual fields to be analyzed as a standard vfobject
+#' @param td total deviation map to be analyzed
 #' @param pd pattern deviation map to be analyzed
 #' @param pdp pattern deviation probability map to be analyzed
 #' @param lims limits of normality required for the GHT algorithm
@@ -673,7 +823,8 @@ ght <- function( vf, td, pd, pdp, lims, helper )
     else if( pdp[i] > 1)
       score[i] <- 5
     else
-      score[i] <- 10 * abs( pd[i] / sunyiu_24d2$luts$pd["1%",i] )      
+      score[i] <- 10 * abs( pd[i] / normvals$sunyiu_24d2$luts$pd["1%",i] )  
+        
   }
   #  print(score)
   
@@ -715,20 +866,18 @@ ght <- function( vf, td, pd, pdp, lims, helper )
   return( "Within normal limits")
 }
 
-#' Foster criteria (FOST)
-#'
-#' Analyse a VF for the presence of a VF defect based on the following criteria: Glaucoma Hemifield Test (GHT) "outside normal limits"; AND a cluster of three contiguous points at the 5% level on the pattern deviation plot
-#' @param vf visual fields to be analyzed as a standard vfovject
-#' @param pd pattern deviation map to be analyzed
+#' @title Foster criteria (FOST)
+#' @description Analyse a VF for the presence of a VF defect based on the following criteria: Glaucoma Hemifield Test (GHT) "outside normal limits" AND a cluster of 3 contiguous points at P<0.05 level on the pattern deviation plot
 #' @param pdp pattern deviation probability map to be analyzed
+#' @param ght result of the GHT
 #' @param helper helper map tht specifies the surrounding points of each point
 #' @return BOOL Whether VF analysis resulted in a detection of a visual field defect
-foster <- function( vf, pd, pdp, lims, helper )
+foster <- function( pdp, ght, helper )
 {
   print( "foster" )
   
   # obtain GHT result of vf
-  if( "Outside normal limits" == ght( vf, pd, pdp, lims, helper ) )
+  if( "Outside normal limits" != ght )
     return( FALSE )
   
   # get index of first and last surround map points
@@ -783,16 +932,15 @@ foster <- function( vf, pd, pdp, lims, helper )
   return( FALSE )
 }
 
-#' Low-pressure Glaucoma Treatment Study Criteria (LOGTS)
-#'
-#' Analyse a VF for the presence of a VF defect based on the following criteria: at least 3 contiguous points depressed more than 8 decibels or 2 contiguous points depressed more than 10 decibels on total deviation plot
+#' @title Low-pressure Glaucoma Treatment Study Criteria (LOGTS)
+#' @description Analyse a VF for the presence of a VF defect based on the following criteria: a cluster of 3 points at < -8 dB OR a cluster of 2 points depressed at < -10 dB on the total deviation plot
 #' @param td total deviation probability map to be analyzed
 #' @param helper helper map tht specifies the surrounding points of each point
 #' @return BOOL Whether VF analysis resulted in a detection of a visual field defect
 logts <- function( td, helper )
 {
   print( "logts")
-  
+
   # get index of first and last surround map points
   m_i <- which( colnames( helper ) == "topleft" )
   m_f <- which( colnames( helper ) == "botright" )
@@ -803,7 +951,7 @@ logts <- function( td, helper )
   {
     if( !( is.na( td[i] ) ) )
     {
-      if( td[i] <= -10 )
+      if( td[i] < -10 )
       {
         print(paste0("i=", i))
         
@@ -814,7 +962,7 @@ logts <- function( td, helper )
           
           if( !( is.na( j ) ) && !( is.na( td[j] ) ) )
           {
-            if( td[j] <= -10 )
+            if( td[j] < -10 )
             {
               print(paste0("j=", j))
               
@@ -832,7 +980,7 @@ logts <- function( td, helper )
   {
     if( !( is.na( td[i] ) ) )
     {
-      if( td[i] <= -8 )
+      if( td[i] < -8 )
       {
         print(paste0("i=", i))
         
@@ -843,7 +991,7 @@ logts <- function( td, helper )
           
           if( !( is.na( j ) ) && !( is.na( td[j] ) ) )
           {
-            if( td[j] <= -8 )
+            if( td[j] < -8 )
             {
               print(paste0("j=", j))
               
@@ -854,7 +1002,7 @@ logts <- function( td, helper )
                 
                 if( !( is.na( k ) ) && !( is.na( td[k] ) ) )
                 {
-                  if( td[k] <= -8 )
+                  if( td[k] < -8 )
                   {
                     # check that 1st and 3rd points are not the same
                     if( i != k )
