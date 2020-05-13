@@ -13,6 +13,8 @@
 #' @param ... other graphical arguments
 #' @export
 vfsfa <- function(vf, file, ...) {
+  # always sort by ID, eye, date, and time
+  vf <- vfsort(vf)
   pdf(file, width = 8.27, height = 11.69)
   par(mar = c(0, 0, 0, 0), ...)
   for(i in 1:nrow(vf)) {
@@ -77,6 +79,8 @@ vfsfa <- function(vf, file, ...) {
 #' @export
 vfspa <- function(vf, file, type = "td", nperm = factorial(7),
                   trunc = 1, testSlope = 0, ...) {
+  # sort
+  vf <- vfsort(vf)
   # run regression analyses
   res <- runregressions(vf, type, nperm, trunc, testSlope)
   pdf(file, width = 8.27, height = 11.69)
@@ -380,7 +384,7 @@ fillfoot <- function() {
 
 #' @noRd
 isnotempty <- function(field) {
-  if(is.null(field) || length(field) != 1 || field == "") return(FALSE)
+  if(is.null(field) || is.na(field) || length(field) != 1 || field == "") return(FALSE)
   return(TRUE)
 }
 
@@ -405,7 +409,7 @@ runregressions <- function(vf, type, nperm, trunc, testSlope) {
                 ageStart = vfiter$age[1], ageEnd  = vfiter$age[res$nvisits],
                 poplr = list(int = res$int, sl = res$sl, pval = res$pval,
                              csl = res$csl, cslp = res$cslp, cslall = res$cstats$cslall,
-                             csr = res$csr, csrp = res$cslp, csrall = res$cstats$csrall),
+                             csr = res$csr, csrp = res$csrp, csrall = res$cstats$csrall),
                 ms = ms, md = md, gh = gh))
   })
   close(pb)
@@ -442,7 +446,8 @@ drawgi <- function(res, ylab, ...) {
 
 #' @noRd
 drawhist <- function(res, alternative, ...) {
-  maxsp <- 3
+  maxsp <- 5     # aproximately 4 decimal points (-ln 0.01 = 4.61)
+  sep   <- 1 / 10 # separation between bins in a tenth so we have 100 bins
   if(alternative == "LT") {
     coltxt  <- "#FF0000"
     colhist <- "#FF000080"
@@ -456,7 +461,8 @@ drawhist <- function(res, alternative, ...) {
     pval    <- res$csrp
     sp      <- res$cslall
   }
-  sep  <- 3 / 100
+  s  <- s  / length(res$pval) # average by the number of locations here
+  sp <- sp / length(res$pval)
   sp[sp > maxsp] <- maxsp # cap to a maximum S/n value of 6 (p-value with 6 decimal places)
   if(s > maxsp) s <- maxsp
   breaks <- seq(0, maxsp, by = sep)

@@ -235,7 +235,7 @@ poplr <- function(vf, type = "td", testSlope = 0, nperm = factorial(7), trunc = 
   # ... and compute the combined S statistic, after removing the blind spot
   pval <- pstats$permutations$pval
   if(length(bs) > 0) pval <- pval[,-bs]
-  cstats <- poplrsstats(pval)
+  cstats <- poplrsstats(pval, trunc = trunc)
   # predicted values
   pred <- sapply(as.list(rbind(pstats$int, pstats$sl)), function(beta) {beta[1] + beta[2] * years})
   return(list(id = vf$id[1], eye = vf$eye[1], type = type, testSlope = testSlope,
@@ -328,16 +328,23 @@ poplrsstats <- function(pval, trunc = 1) {
   # init
   nperm <- nrow(pval)
   # Apply the Truncated Product Method if required (i.e. trunc between 0 and 1)
-  kl <- matrix(rep(1, nrow(pval) * ncol(pval)), nrow(pval), ncol(pval)) # for left-tail analysis
-  kl[pval > trunc] <- 0
-  kr <- matrix(rep(1, nrow(pval) * ncol(pval)), nrow(pval), ncol(pval)) # for right-tail analysis
-  kr[(1 - pval) > trunc] <- 0
+  # left-tail analysis
+  tpl <- apply(pval, 1, min)
+  tpl[tpl < trunc] <- trunc
+  kl <- matrix(rep(1, nrow(pval) * ncol(pval)), nrow(pval), ncol(pval))
+  kl[pval > tpl] <- 0
+  # right-tail analysis
+  pvalr <- 1 - pval
+  tpr <- apply(pvalr, 1, min)
+  tpr[tpr < trunc] <- trunc
+  kr <- matrix(rep(1, nrow(pvalr) * ncol(pvalr)), nrow(pvalr), ncol(pvalr))
+  kr[pvalr > tpr] <- 0
   # combine p-value test statistics with a modified Fisher S statistic
-  csl <- -rowSums(kl * log10(pval))     / apply(kl, 1, sum)
-  csr <- -rowSums(kr * log10(1 - pval)) / apply(kr, 1, sum)
+  csl <- -rowSums(kl * log(pval))
+  csr <- -rowSums(kr * log(1 - pval))
   # observed and permutation test statistics
-  cslp <- 1 - rank(csl)[1] / nperm
-  csrp <- 1 - rank(csr)[1] / nperm
-  return(list(csl = csl[1], cslp = cslp, cslall = csl,
-              csp = csr[1], csrp = csrp, cslpall = csr))
+  cslp <- 1 - rank(csl) / nperm
+  csrp <- 1 - rank(csr) / nperm
+  return(list(csl = csl[1], cslp = cslp[1], cslall = csl, cslpall = cslp,
+              csr = csr[1], csrp = csrp[1], csrall = csr, csrpall = csrp))
 }

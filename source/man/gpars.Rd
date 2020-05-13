@@ -4,7 +4,9 @@
 \name{gpars}
 \alias{gpars}
 \title{List of graphical parameters}
-\format{See section \code{Structure of graphical parameters} in \code{\link{setgpar}}}
+\format{
+See section \code{Structure of graphical parameters} in \code{\link{setgpar}}
+}
 \usage{
 gpars
 }

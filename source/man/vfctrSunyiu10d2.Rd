@@ -4,7 +4,9 @@
 \name{vfctrSunyiu10d2}
 \alias{vfctrSunyiu10d2}
 \title{SUNY-IU dataset of healthy eyes for 10-2 static automated perimetry}
-\format{See section \code{Structure of visual fields data} in \code{\link{vfdesc}}}
+\format{
+See section \code{Structure of visual fields data} in \code{\link{vfdesc}}
+}
 \usage{
 vfctrSunyiu10d2
 }

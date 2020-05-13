@@ -140,7 +140,7 @@ loadhfaxml <- function(file, type = "pwg", repeated = mean) {
 loadhfadicom <- function(file, type = "pwg", repeated = mean) {
   vf <- td <- tdp <- pd <- pdp <- g <- gp <- NA
   # load and arrange data for processing
-  dat <- readDICOM(file)$hdr
+  dat <- readDICOMFile(file)$hdr
   dat <- as.data.frame(eval(parse(text = paste0("dat$`", file, "`"))),
                        stringsAsFactors = FALSE)
   # extract the groups we are interested on

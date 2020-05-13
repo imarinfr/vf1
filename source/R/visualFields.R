@@ -35,7 +35,7 @@
 #' @importFrom gtools combinations
 #' @importFrom combinat permn
 #' @importFrom XML xmlParse xmlToList
-#' @importFrom oro.dicom readDICOM
+#' @importFrom oro.dicom readDICOMFile
 #' @importFrom graphics par plot polygon text grconvertX grconvertY axis box lines
 #'             rect segments screen split.screen close.screen hist points title
 #' @importFrom grDevices colorRampPalette rgb col2rgb chull pdf dev.off

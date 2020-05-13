@@ -4,7 +4,9 @@
 \name{locmaps}
 \alias{locmaps}
 \title{Location maps}
-\format{See section \code{Structure of location maps} in \code{\link{setlocmap}}}
+\format{
+See section \code{Structure of location maps} in \code{\link{setlocmap}}
+}
 \usage{
 locmaps
 }

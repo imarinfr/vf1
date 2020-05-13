@@ -4,7 +4,9 @@
 \name{vfctrIowaPC26}
 \alias{vfctrIowaPC26}
 \title{Central visual field}
-\format{See section \code{Structure of visual fields data} in \code{\link{vfdesc}}}
+\format{
+See section \code{Structure of visual fields data} in \code{\link{vfdesc}}
+}
 \usage{
 vfctrIowaPC26
 }
