@@ -34,7 +34,10 @@ PoPLR analysis}
 
 \item{nperm}{number of permutations. If the number of visits is 7 or less, then
 \code{nperm = factorial(nrow(vf))}. For series greater than 8 visits, default is
-factorial(7)}
+factorial(7). For series up to 7 visits, it is the factorial of the number of visits
+(with less than 7 visits, the number of possible permutations is small and results
+can be unreliable. For instance, for 5 visits, the number of possible permutations is
+only 120.)}
 
 \item{trunc}{truncation value for the Truncated Product Method (see reference)}
 }

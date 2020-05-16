@@ -198,7 +198,10 @@ plr <- function(vf, type = "td", testSlope = 0) {
 #' @rdname linreg
 #' @param nperm number of permutations. If the number of visits is 7 or less, then
 #' \code{nperm = factorial(nrow(vf))}. For series greater than 8 visits, default is
-#' factorial(7)
+#' factorial(7). For series up to 7 visits, it is the factorial of the number of visits
+#' (with less than 7 visits, the number of possible permutations is small and results
+#' can be unreliable. For instance, for 5 visits, the number of possible permutations is
+#' only 120.)
 #' @param trunc truncation value for the Truncated Product Method (see reference)
 #' @export
 poplr <- function(vf, type = "td", testSlope = 0, nperm = factorial(7), trunc = 1) {
@@ -221,15 +224,16 @@ poplr <- function(vf, type = "td", testSlope = 0, nperm = factorial(7), trunc = 
     # is number of permutations is smaller than nrow(porder) do random sampling
     if(nperm < nrow(porder))
       porder <- rbind(porder[1,], porder[sample(nrow(porder), nperm - 1),])
+    else nperm <- nrow(porder)
   } else {
     if(nperm > 10000)
-      stop("I'm sorry Dave, I'm afraid I can't do that.
-           I think you know what the problem is just as well as I do.")
+      stop("I'm sorry Dave, I'm afraid I can't do that. I think you know what the problem is just as well as I do.")
     porder <- t(replicate(factorial(8), c(1:nvisits)[sample(nvisits)]))
     porder <- rbind(c(1:nvisits), porder)
     porder <- unique(porder)[1:nperm,]
+    if(nrow(porder) != nperm)
+      stop("something went wrong and did not get the number of permutations you wanted")
   }
-  if(nrow(porder) != nperm) stop("something went wrong and did not get the number of permutations you wanted")
   # get the p-values from pointwise linear regression for series and all permumtations
   pstats <- poplrpvals(y, years, porder, testSlope)
   # ... and compute the combined S statistic, after removing the blind spot
