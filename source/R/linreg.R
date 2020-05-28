@@ -141,7 +141,7 @@ glr <- function(g, type = "md", testSlope = 0) {
   pred <- sl * years + int
   if(type == "sd" || type == "psd") pval <- 1 - pval
   return(list(id = g$id[1], eye = g$eye[1], type = type, testSlope = testSlope,
-              nvisits = nvisits, years = years, data = y, pred = pred,
+              nvisits = nvisits, dates = g$date, years = years, data = y, pred = pred,
               sl = sl, int = int, se = se, tval = tval, pval = 100 * pval))
 }
 
@@ -191,7 +191,7 @@ plr <- function(vf, type = "td", testSlope = 0) {
   # predicted values
   pred <- sapply(as.list(rbind(int, sl)), function(beta) {beta[1] + beta[2] * years})
   return(list(id = vf$id[1], eye = vf$eye[1], type = type, testSlope = testSlope,
-              nvisits = nvisits, years = years, data = vf[,getvfcols()], pred = pred,
+              nvisits = nvisits, dates = vf$date, years = years, data = vf[,getvfcols()], pred = pred,
               sl = sl, int = int, se = se, tval = tval, pval = 100 * pval))
 }
 
@@ -243,7 +243,7 @@ poplr <- function(vf, type = "td", testSlope = 0, nperm = factorial(7), trunc = 
   # predicted values
   pred <- sapply(as.list(rbind(pstats$int, pstats$sl)), function(beta) {beta[1] + beta[2] * years})
   return(list(id = vf$id[1], eye = vf$eye[1], type = type, testSlope = testSlope,
-              nvisits = nvisits, years = years, data = vf[,getvfcols()], pred = pred,
+              nvisits = nvisits, dates = vf$date, years = years, data = vf[,getvfcols()], pred = pred,
               sl = pstats$sl, int = pstats$int, se = pstats$se, tval = pstats$tval,
               pval = 100 * pstats$pval, nperm = nperm,
               csl = cstats$csl, cslp = 100 * cstats$cslp,
