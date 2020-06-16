@@ -2,6 +2,7 @@
 % Please edit documentation in R/vfreports.R
 \name{vfspa}
 \alias{vfspa}
+\alias{vfspashiny}
 \title{Series Progession Analysis}
 \usage{
 vfspa(
@@ -13,13 +14,20 @@ vfspa(
   testSlope = 0,
   ...
 )
+
+vfspashiny(
+  vf,
+  type = "td",
+  nperm = factorial(7),
+  trunc = 1,
+  testSlope = 0,
+  ...
+)
 }
 \arguments{
-\item{vf}{A \code{VisualField} object}
+\item{vf}{visual field data}
 
-\item{file}{The pdf file name where to save the single visual field
-analysis report. If `\code{FALSE}` (default) it shows an interactive
-report with Shiny}
+\item{file}{The pdf file name where to save the one-page reports of single field analysis}
 
 \item{type}{Type of data to use. It can be `\code{s}`, `\code{td}`, or
 `\code{pd}`.}
@@ -39,12 +47,19 @@ or PoPLR analysis}
 \item{...}{other graphical arguments}
 }
 \description{
-Performs a series progression analysis, including PoPLR
-(see reference) and the global indices Mean Sensitivity, Mean Deviation,
-and General Height and reports the results graphically either
-interactively in a browser (with Shiny) or in a pdf file.
+Generation of one-page reports of series progression analyses
+\itemize{
+  \item\code{vfspa} saves a pdf with one-page reports of series progression analyses
+  \item\code{vfspashiny} generates interactive one-page reports of series progression
+    analyses based on Shiny
+}
 }
 \references{
+N. O'Leary, B. C. Chauhan, and P. H. Artes. \emph{Visual field progression in
+glaucoma: estimating the overall significance of deterioration with permutation
+analyses of pointwise linear regression (PoPLR)}. Investigative Ophthalmology
+and Visual Science, 53, 2012
+
 N. O'Leary, B. C. Chauhan, and P. H. Artes. \emph{Visual field progression in
 glaucoma: estimating the overall significance of deterioration with permutation
 analyses of pointwise linear regression (PoPLR)}. Investigative Ophthalmology
