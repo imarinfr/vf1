@@ -163,7 +163,7 @@ Default is `\code{3}`}
 
 \item{devpl}{last visual field (TD or PD) deviation probability values}
 
-\item{thr}{threshold used for the standard deviation of residuals
+\item{thr}{threshold used for the median absolute deviation of residuals
 from simple linear regression. If greater than the threshold, the
 sparkline for that location is plotted in red and with a thicker line.
 Default is `\code{2}` (dB)}

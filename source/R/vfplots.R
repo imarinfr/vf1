@@ -476,7 +476,7 @@ vflegoplotdev <- function(gpar, vfb, devb, devpb, vfl, devl, devpl, crad = 2, di
 }
 
 #' @rdname vfplots
-#' @param thr threshold used for the standard deviation of residuals
+#' @param thr threshold used for the median absolute deviation of residuals
 #' from simple linear regression. If greater than the threshold, the
 #' sparkline for that location is plotted in red and with a thicker line.
 #' Default is `\code{2}` (dB)
@@ -549,11 +549,11 @@ vfplotsparklines <- function(vf, type = "td", thr = 2, width = 4,
                   grconvertY(gpar$coord$y, to = "ndc"),
                   grconvertY(gpar$coord$y + height, to = "ndc"))
   }
-  opar <- par() # get parameters before splitting into pointwise sparkline plots
+  par0 <- par() # get parameters before splitting into pointwise sparkline plots
   for(i in 1:nrow(figs)) {
     par(fig = figs[i,], new = TRUE)
     plot(x, y[,i], type = "l", xlim = xlim, ylim = ylim, axes = FALSE, col = cols[i], ...)
   }
-  # reset relevant garphical parameters
-  par(fig = opar$fig, usr = opar$usr, xaxp = opar$xaxp, yaxp = opar$yaxp)
+  # reset back parameters
+  par(fig = par0$fig, fin = par0$fin, pin = par0$pin, usr = par0$usr, xaxp = par0$xaxp, yaxp = par0$yaxp)
 }

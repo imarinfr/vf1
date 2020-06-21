@@ -622,7 +622,7 @@ drawgi <- function(res, ylab, ...) {
 
 #' @noRd
 drawhist <- function(res, alternative, ...) {
-  maxsp <- 5     # aproximately 4 decimal points (-ln 0.01 = 4.61)
+  maxsp <- 5
   sep   <- 1 / 10 # separation between bins in a tenth so we have 100 bins
   if(alternative == "LT") {
     coltxt  <- "#FF0000"
@@ -635,11 +635,11 @@ drawhist <- function(res, alternative, ...) {
     colhist <- "#00800040"
     s       <- res$csr
     pval    <- res$csrp
-    sp      <- res$cslall
+    sp      <- res$csrall
   }
   s  <- s  / length(res$pval) # average by the number of locations here
   sp <- sp / length(res$pval)
-  sp[sp > maxsp] <- maxsp # cap to a maximum S/n value of 6 (p-value with 6 decimal places)
+  sp[sp > maxsp] <- maxsp
   if(s > maxsp) s <- maxsp
   breaks <- seq(0, maxsp, by = sep)
   ymax <- max(hist(sp, breaks = breaks, plot = FALSE)$density)
@@ -648,16 +648,12 @@ drawhist <- function(res, alternative, ...) {
   par(plt = c(0, 1, 0.4, 1), mgp = c(0.6, 0.1, 0), ...)
   hist(sp, breaks = breaks, freq = FALSE, main = "", xlim = xlim, ylim = ylim,
        xlab = "", ylab = "", lty = 0, col = colhist, axes = FALSE, ann = FALSE)
+  axis(1, at = 0:maxsp, tcl = -0.2, lwd = 0.5, lwd.ticks = 0.5)
+  title(xlab = "S / n")
   lines(c(s, s), 0.8 * c(0, ymax), col = coltxt)
   points(s, 0.8 * ymax, pch = 21, col = coltxt, bg = coltxt)
-  if(alternative == "LT") {
-    axis(1, at = 0:maxsp, tcl = -0.3, lwd = 0.5, lwd.ticks = 0.5)
-    title(xlab = "S / n", ...)
-    text(x = maxsp, y = ymax, label = "S (left)", adj = c(1, 1), font = 2, ...)
-  } else {
-    axis(1, at = 0:maxsp, labels = rep("", maxsp + 1), tcl = -0.3, lwd = 0.5, lwd.ticks = 0.5)
-    text(x = maxsp, y = ymax, label = "S (right)", adj = c(1, 1), font = 2, ...)
-  }
+  if(alternative == "LT") text(x = maxsp, y = ymax, label = "S (left)", adj = c(1, 1), font = 2, ...)
+  if(alternative == "GT") text(x = maxsp, y = ymax, label = "S (right)", adj = c(1, 1), font = 2, ...)
 }
 
 #' @noRd
