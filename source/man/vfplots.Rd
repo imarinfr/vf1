@@ -80,8 +80,8 @@ vfplotsparklines(
   vf,
   type = "td",
   thr = 2,
-  width = 5,
-  height = width,
+  width = 4,
+  height = 2,
   add = FALSE,
   ...
 )
@@ -169,10 +169,10 @@ sparkline for that location is plotted in red and with a thicker line.
 Default is `\code{2}` (dB)}
 
 \item{width}{the width of each pointwise sparkline plot. Default is
-`\code{5}` (degrees of visual angle)}
+`\code{4}` (degrees of visual angle)}
 
 \item{height}{the height of each pointwise sparkline plot. Default is
-the same as `\code{width}`}
+`\code{2}` (degrees of visual angle)}
 
 \item{add}{whether to generate a new plot (`\code{FALSE}`, as default)
 or to add to an existing figure (`\code{TRUE}`)}

@@ -481,9 +481,9 @@ vflegoplotdev <- function(gpar, vfb, devb, devpb, vfl, devl, devpl, crad = 2, di
 #' sparkline for that location is plotted in red and with a thicker line.
 #' Default is `\code{2}` (dB)
 #' @param width the width of each pointwise sparkline plot. Default is
-#' `\code{5}` (degrees of visual angle)
+#' `\code{4}` (degrees of visual angle)
 #' @param height the height of each pointwise sparkline plot. Default is
-#' the same as `\code{width}`
+#' `\code{2}` (degrees of visual angle)
 #' @param add whether to generate a new plot (`\code{FALSE}`, as default)
 #' or to add to an existing figure (`\code{TRUE}`)
 #' @examples
@@ -496,8 +496,8 @@ vflegoplotdev <- function(gpar, vfb, devb, devpb, vfl, devl, devpl, crad = 2, di
 #' # PD values
 #' vfplotsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
 #' @export
-vfplotsparklines <- function(vf, type = "td", thr = 2, width = 5,
-                             height = width, add = FALSE, ...) {
+vfplotsparklines <- function(vf, type = "td", thr = 2, width = 4,
+                             height = 2, add = FALSE, ...) {
   if(nrow(unique(data.frame(vf$id, vf$eye))) != 1)
     stop("all visual fields must belong to the same subject id and eye")
   nv   <- getnv()
@@ -541,13 +541,13 @@ vfplotsparklines <- function(vf, type = "td", thr = 2, width = 5,
   if(gpar$tess$xlim[1] < gpar$tess$xlim[2]) {
     figs <- cbind(grconvertX(gpar$coord$x - width  / 2, to = "ndc"),
                   grconvertX(gpar$coord$x + width  / 2, to = "ndc"),
-                  grconvertY(gpar$coord$y - height / 2, to = "ndc"),
-                  grconvertY(gpar$coord$y + height / 2, to = "ndc"))
+                  grconvertY(gpar$coord$y, to = "ndc"),
+                  grconvertY(gpar$coord$y + height, to = "ndc"))
   } else {
     figs <- cbind(grconvertX(gpar$coord$x + width  / 2, to = "ndc"),
                   grconvertX(gpar$coord$x - width  / 2, to = "ndc"),
-                  grconvertY(gpar$coord$y - height / 2, to = "ndc"),
-                  grconvertY(gpar$coord$y + height / 2, to = "ndc"))
+                  grconvertY(gpar$coord$y, to = "ndc"),
+                  grconvertY(gpar$coord$y + height, to = "ndc"))
   }
   opar <- par() # get parameters before splitting into pointwise sparkline plots
   for(i in 1:nrow(figs)) {
