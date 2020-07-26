@@ -233,6 +233,133 @@ loadhfadicom <- function(file, type = "pwg", repeated = mean) {
 #' is \code{\%d.\%m.\%Y}
 #' @export
 loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m.%Y") {
+  # read the csv-file exported by EyeSuite
+  dat <-
+    read.csv2(
+      file,
+      header = F,
+      quote = "",
+      stringsAsFactors = F,
+      fill = T,
+      col.names = paste("V", 1:2000, sep = ""),
+      encoding = "latin1"
+    )
+  
+  # rename some columns for better readibility of code
+  names(dat)[1:6] <- c("id", "lastname", "firstname","dateofbirth","sex","ethnicity")
+  names(dat)[11:12] <- c("apparatus", "serial_number")
+  names(dat)[18:24] <- c("eye","pattern","stimulus_size","stimulus_duration","stiumulus_luminance","strategy","tperimetry")
+  names(dat)[26:31] <- c("testduration","testdate","test_starting_time","reliability_factor","locnum","questions")
+  names(dat)[32:36] <- c("repetitions","positive_catch_trials","false_positives","negative_catch_trials","false_negatives")
+  names(dat)[37:41] <- c("notes","sphere","cylinder","axis","bcva")
+  
+  # recode some variables to factors
+  dat$eye <- factor(dat$eye,
+                           levels = c(0, 1, 3),
+                           labels = c("OD", "OS", "binocular"))
+  dat$strategy <- factor(
+    dat$strategy,
+    levels = c(0, 1, 2, 3, 4, 6, 11),
+    labels = c("normal", "dynamic", "2LT/normal", "low vision", "1LT", "TOP", "GATE")
+  )
+  dat$pattern <- factor(dat$pattern)
+  dat$tperimetry <- factor(dat$tperimetry,
+                                  levels = c(0, 1),
+                                  labels = c("sap", "swap"))
+  
+  # only use the G pattern for now
+  dat <- dat[dat$pattern == "G", ]
+  dat <- dat[!is.na(dat$strategy), ]
+  dat <- dat[!is.na(dat$pattern), ]
+  dat <- dat[!is.na(dat$tperimetry), ]
+  
+  # exclude binocular visual fields
+  if (any(dat$eye == "binocular")) {
+    warning(
+      "Binocular visual fields are not supported! Binocular visual fields have been removed."
+    )
+    dat <- dat[dat$eye != "binocular", ]
+  }
+  
+  if (nrow(dat) < 1) stop("There are no (currently) valid visual fields in this file.")
+  
+  #function to extract sensitivities for the different loci from one line
+  extractLocations <- function(tLine) {
+    
+    if(nrow(tLine) > 1) stop ("The function extractLocations is meant for processing only one line.")
+    
+    locMatrix <-
+      data.frame(matrix(unlist(tLine[, 44:338]), 59, 5, byrow = T))
+    names(locMatrix) <- c("xod", "yod", "sens1", "sens2", "norm")
+
+    if (tLine[1, 18] == "OS")
+      locMatrix$xod <- -locMatrix$xod
+
+    locMatrix$loc_ID <- 1:nrow(locMatrix)
+    locMatrix$sens2 <- NULL # remove second measurement for now
+    # returnTable <-
+    #   apply(combinedTable[, c("sens1", "sens2")], 1, mean, na.rm = T)
+    newLine <- locMatrix$sens1 # other values are ignored for now
+    names(newLine) <-
+      paste0("l", as.character(locMatrix$loc_ID))
+    rValue <- t(as.matrix(newLine, 1, 59))
+    return(rValue)
+  }
+  
+  # apply the extractLocations function on each row
+  vFieldsLocs <- data.frame()
+  for(j in 1:nrow(dat)) {
+    vFieldsLocs <- rbind(vFieldsLocs, extractLocations(dat[j, ]))
+  }
+  dat <- cbind(dat[, c("id", "eye", "testdate", "test_starting_time", "dateofbirth", "notes", "false_positives", "false_negatives", "repetitions")], 
+               vFieldsLocs)
+  
+  return(dat)
+  # return(extractLocations(dat[1,]))
+  
+  # 
+  # # convert all text columns into the correct class
+  # vFieldsRaw$tperimetry <- as.character(vFieldsRaw$tperimetry)
+  # vFieldsRaw$talgorithm <- as.character(vFieldsRaw$strategy)
+  # vFieldsRaw$tpattern <- as.character(vFieldsRaw$pattern)
+  # vFieldsRaw$tdate <- as.Date(vFieldsRaw$testdate, date_format)
+  # vFieldsRaw$ttime <- as.character(vFieldsRaw$test_starting_time)
+  # vFieldsRaw$stype <- as.character(vFieldsRaw$notes)
+  # vFieldsRaw$sage <- agecalc(as.Date(vFieldsRaw$dateofbirth, date_format),
+  #                            as.Date(vFieldsRaw$testdate, date_format))
+  # vFieldsRaw$seye <- as.character(vFieldsRaw$eye)
+  # vFieldsRaw$sbsx <- 15
+  # vFieldsRaw$sbsy <- -3
+  # vFieldsRaw$sfp <- vFieldsRaw$false_positives / vFieldsRaw$positive_catch_trials
+  # vFieldsRaw$sfn <- vFieldsRaw$false_negatives / vFieldsRaw$negative_catch_trials
+  # vFieldsRaw$sfl <- vFieldsRaw$repetitions / vFieldsRaw$questions
+  # vFieldsRaw$sduration <- as.character(vFieldsRaw$testduration)
+  # vFieldsRaw$spause <- NA
+  # 
+  # #exract final table
+  # finalIndex <-
+  #   c(
+  #     "id",
+  #     "tperimetry",
+  #     "talgorithm",
+  #     "tpattern",
+  #     "tdate",
+  #     "ttime",
+  #     "stype",
+  #     "sage",
+  #     "seye",
+  #     "sbsx",
+  #     "sbsy",
+  #     "sfp",
+  #     "sfn",
+  #     "sfl",
+  #     "sduration",
+  #     "spause"
+  #   )
+  # finalIndex <- c(finalIndex, paste("L", 1:59, sep = ""))
+  # 
+  # # return vf-object
+  # return(vFieldsRaw[, finalIndex])
 }
 
 #' @rdname vfloaders
