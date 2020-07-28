@@ -233,7 +233,7 @@ loadhfadicom <- function(file, type = "pwg", repeated = mean) {
 #' is \code{\%d.\%m.\%Y}
 #' @export
 loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m.%Y") {
-
+  
   # create a list for saving the results
   resultList <- list()
   
@@ -276,70 +276,114 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
   )
   dat$pattern <- factor(dat$pattern)
   dat$tperimetry <- factor(dat$tperimetry,
-                                  levels = c(0, 1),
-                                  labels = c("sap", "swap"))
+                           levels = c(0, 1),
+                           labels = c("sap", "swap"))
   
   dat <- dat[!is.na(dat$strategy), ]
   dat <- dat[!is.na(dat$pattern), ]
   dat <- dat[!is.na(dat$tperimetry), ]
-
+  
   if (nrow(dat) < 1) stop("There are no (currently) valid visual fields in this file.")
   
   # create a table with keys for each patient
-  dat$patient_identifier <- paste0(dat$lastname, ", ", dat$firstname, ", ", dat$dob)
+  dat$patient_identifier <- paste0(dat$lastname, dat$firstname, dat$dob, sep = ", ")
   dat$id <- as.integer(as.factor(dat$patient_identifier))
   
   resultList$patients <- dat[, c("id", "firstname", "lastname", "dob")]
   
+  # create a table with keys for each visual field type
+  dat$vf_identifier <- paste(dat$tperimetry, dat$pattern, dat$locnum, dat$strategy, sep = ", ")
+  dat$vfID <- as.integer(as.factor(dat$vf_identifier))
+  
+  vf_index <- dat$vfID
+  
+  resultList$vf_types <- unique(dat[, c("vfID", "tperimetry", "pattern", "locnum", "strategy")])
+  
   # function to extract sensitivities for the different loci from one line
   extractLocations <- function(tLine) {
     
-    if(nrow(tLine) > 1) stop ("The function extractLocations is meant for processing only one line.")
+    # extract number of locations
+    locnum <- as.integer(tLine[which(names(tLine) == "locnum")])
     
+    # extract locations
+    startCol <- 44
+    endCol <- startCol + (locnum* 5) - 1
+    locs <- as.numeric(unlist(tLine[startCol:endCol])) / 10
+    
+    # create a matrix
     locMatrix <-
-      data.frame(matrix(unlist(tLine[, 44:338]), 59, 5, byrow = T))
+      data.frame(matrix(locs, locnum, 5, byrow = TRUE))
     names(locMatrix) <- c("xod", "yod", "sens1", "sens2", "norm")
-
-    # if (tLine[1, 18] == "OS")
-    #  locMatrix$xod <- -locMatrix$xod
-
+    
+    # switch locmap for left eyes?
+    if (tLine[which(names(tLine) == "eye")] == "OS")
+      locMatrix$xod <- -locMatrix$xod
+    
+    # order locmap
+    locMatrix <- locMatrix[order(locMatrix$xod, locMatrix$yod), ]
+    
+    # give each location a key
     locMatrix$loc_ID <- 1:nrow(locMatrix)
-    locMatrix$sens2 <- NULL # remove second measurement for now
-    # returnTable <-
-    #   apply(combinedTable[, c("sens1", "sens2")], 1, mean, na.rm = T)
-    newLine <- locMatrix$sens1 # other values are ignored for now
-    names(newLine) <-
-      paste0("l", as.character(locMatrix$loc_ID))
-    rValue <- t(as.matrix(newLine, 1, 59))
-    return(rValue)
+    
+    return(locMatrix)
   }
-  
-  # extract the locmaps
-  locmaps <- dat[, c("pattern", "locnum")]
-  xindex <- 44 + 5 * (seq(1, max(locmaps$locnum)) - 1)
-  locmaps <- cbind(locmaps, dat[, c(xindex, xindex + 1)])
-  locmaps$locID <- as.integer(as.factor(paste(locmaps$pattern, locmaps$locnum)))
-  locmapList <- list()
-  for (i in 1:nrow(locmaps))
-  {
-    m1 <- matrix(locmaps[i, 2 + 1:(2 * locmaps$locnum[i])] / 10, nrow = locmaps$locnum[i], byrow = TRUE)
-    df1 <- data.frame(m1)
-    names(df1) <- c("xod", "yod")
-    locmapList[[i]] <- m1
-  }
-  resultList$locmapList <- locmapList
-  #resultList$locmaps <- unique(locmaps[, c("locID", "pattern", "locnum")])
-  resultList$locmaps <- unique(locmaps)
   
   # apply the extractLocations function on each row
-  vFieldsLocs <- data.frame()
-  for(j in 1:nrow(dat)) {
-    vFieldsLocs <- rbind(vFieldsLocs, extractLocations(dat[j, ]))
-  }
-  dat <- cbind(dat[, c("id", "eye", "date", "time", "age", "type", "fpr", "fnr", "fl", "pattern", "strategy")], 
-               vFieldsLocs)
+  locations <- apply(dat, 1, extractLocations)
   
-  resultList$sens <- dat
+  # extract the locmaps
+  locmaps <- lapply(locations, 
+                    function (mt) { rv <- mt[, c("loc_ID", "xod", "yod")]; rownames(rv) <- NULL; return(rv) }
+  )
+  locmaps <- unique(locmaps)
+  
+  resultList$locmaps <- locmaps
+  
+  # extract the sensitivities
+  sens <- lapply(locations, 
+                 function (mt) { rv <- mt$sens1; names(rv) <- paste0("l", mt$loc_ID); return(rv) }
+  )
+  
+  resultList$sensitivities <- 
+    lapply(unique(vf_index), 
+           function(vf_type) { vf_list <- sens[vf_index == vf_type]; rv <- t(sapply(vf_list, c)); return(rv)}
+    )
+  
+  # extract the defects
+  defects <- lapply(locations, 
+                    function (mt) { rv <- mt$sens1 - mt$norm; names(rv) <- paste0("l", mt$loc_ID); return(rv) }
+  )
+  
+  resultList$defects <- 
+    lapply(unique(vf_index), 
+           function(vf_type) { vf_list <- defects[vf_index == vf_type]; rv <- t(sapply(vf_list, c)); return(rv)}
+    )
+  
+  # extract other properties
+  resultList$fields <- dat[, c("id", "eye", "date", "time", "age", "type", "fpr", "fnr", "fl", "vfID")]
+  
+  # add some functions for convering these data to standard tables of the visual fields package
+  resultList$create_locmap <- 
+    function(vf_id) {
+      lmap <- list()
+      vft <- resultList$vf_types[resultList$vf_types$vfID == vf_id, c("pattern", "locnum")]
+      lmap$name <- paste(vft$pattern, vft$locnum)
+      lmap$desc <- "This locmap was automatically created from the csv exported by Eyesuite. NB: The locations are not numbered according to the standard!"
+      lmap$coord <- resultList$locmap[[vf_id]][, c("xod", "yod")]
+      names(lmap$coord) <- c("x", "y")
+      lmap$bs <- NA
+      return(lmap)
+    }
+  
+  resultList$get_sensitivities <-
+    function(vf_id) {
+      cbind(resultList$fields[test1$fields$vfID == vf_id, ], resultList$sensitivities[[vf_id]])
+    }
+  
+  resultList$get_defects <-
+    function(vf_id) {
+      cbind(resultList$fields[test1$fields$vfID == vf_id, ], resultList$defects[[vf_id]])
+    }
   
   return(resultList)
 }
