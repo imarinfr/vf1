@@ -233,6 +233,10 @@ loadhfadicom <- function(file, type = "pwg", repeated = mean) {
 #' is \code{\%d.\%m.\%Y}
 #' @export
 loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m.%Y") {
+
+  # create a list for saving the results
+  resultList <- list()
+  
   # read the csv-file exported by EyeSuite
   dat <-
     read.csv2(
@@ -254,9 +258,17 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
   names(dat)[37:41] <- c("notes","sphere","cylinder","axis","bcva")
   
   # recode some variables to factors
-  dat$eye <- factor(dat$eye,
-                           levels = c(0, 1, 3),
-                           labels = c("OD", "OS", "binocular"))
+  dat$eye <- as.character(factor(dat$eye,
+                                 levels = c(0, 1, 3),
+                                 labels = c("OD", "OS", "OU")))
+  dat$date <- strptime(dat$testdate, format = "%d.%m.%Y")
+  dat$dob <- strptime(dat$dateofbirth, format = "%d.%m.%Y")
+  dat$age <- getage(dat$dob, dat$date)
+  dat$time <- dat$test_starting_time
+  dat$type <- dat$note
+  dat$fpr <- round(dat$false_positives / dat$positive_catch_trials, 3)
+  dat$fnr <- round(dat$false_negatives / dat$negative_catch_trials, 3)
+  dat$fl <- dat$repetitions
   dat$strategy <- factor(
     dat$strategy,
     levels = c(0, 1, 2, 3, 4, 6, 11),
@@ -267,23 +279,19 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
                                   levels = c(0, 1),
                                   labels = c("sap", "swap"))
   
-  # only use the G pattern for now
-  dat <- dat[dat$pattern == "G", ]
   dat <- dat[!is.na(dat$strategy), ]
   dat <- dat[!is.na(dat$pattern), ]
   dat <- dat[!is.na(dat$tperimetry), ]
-  
-  # exclude binocular visual fields
-  if (any(dat$eye == "binocular")) {
-    warning(
-      "Binocular visual fields are not supported! Binocular visual fields have been removed."
-    )
-    dat <- dat[dat$eye != "binocular", ]
-  }
-  
+
   if (nrow(dat) < 1) stop("There are no (currently) valid visual fields in this file.")
   
-  #function to extract sensitivities for the different loci from one line
+  # create a table with keys for each patient
+  dat$patient_identifier <- paste0(dat$lastname, ", ", dat$firstname, ", ", dat$dob)
+  dat$id <- as.integer(as.factor(dat$patient_identifier))
+  
+  resultList$patients <- dat[, c("id", "firstname", "lastname", "dob")]
+  
+  # function to extract sensitivities for the different loci from one line
   extractLocations <- function(tLine) {
     
     if(nrow(tLine) > 1) stop ("The function extractLocations is meant for processing only one line.")
@@ -292,8 +300,8 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
       data.frame(matrix(unlist(tLine[, 44:338]), 59, 5, byrow = T))
     names(locMatrix) <- c("xod", "yod", "sens1", "sens2", "norm")
 
-    if (tLine[1, 18] == "OS")
-      locMatrix$xod <- -locMatrix$xod
+    # if (tLine[1, 18] == "OS")
+    #  locMatrix$xod <- -locMatrix$xod
 
     locMatrix$loc_ID <- 1:nrow(locMatrix)
     locMatrix$sens2 <- NULL # remove second measurement for now
@@ -306,60 +314,34 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
     return(rValue)
   }
   
+  # extract the locmaps
+  locmaps <- dat[, c("pattern", "locnum")]
+  xindex <- 44 + 5 * (seq(1, max(locmaps$locnum)) - 1)
+  locmaps <- cbind(locmaps, dat[, c(xindex, xindex + 1)])
+  locmaps$locID <- as.integer(as.factor(paste(locmaps$pattern, locmaps$locnum)))
+  locmapList <- list()
+  for (i in 1:nrow(locmaps))
+  {
+    m1 <- matrix(locmaps[i, 2 + 1:(2 * locmaps$locnum[i])] / 10, nrow = locmaps$locnum[i], byrow = TRUE)
+    df1 <- data.frame(m1)
+    names(df1) <- c("xod", "yod")
+    locmapList[[i]] <- m1
+  }
+  resultList$locmapList <- locmapList
+  #resultList$locmaps <- unique(locmaps[, c("locID", "pattern", "locnum")])
+  resultList$locmaps <- unique(locmaps)
+  
   # apply the extractLocations function on each row
   vFieldsLocs <- data.frame()
   for(j in 1:nrow(dat)) {
     vFieldsLocs <- rbind(vFieldsLocs, extractLocations(dat[j, ]))
   }
-  dat <- cbind(dat[, c("id", "eye", "testdate", "test_starting_time", "dateofbirth", "notes", "false_positives", "false_negatives", "repetitions")], 
+  dat <- cbind(dat[, c("id", "eye", "date", "time", "age", "type", "fpr", "fnr", "fl", "pattern", "strategy")], 
                vFieldsLocs)
   
-  return(dat)
-  # return(extractLocations(dat[1,]))
+  resultList$sens <- dat
   
-  # 
-  # # convert all text columns into the correct class
-  # vFieldsRaw$tperimetry <- as.character(vFieldsRaw$tperimetry)
-  # vFieldsRaw$talgorithm <- as.character(vFieldsRaw$strategy)
-  # vFieldsRaw$tpattern <- as.character(vFieldsRaw$pattern)
-  # vFieldsRaw$tdate <- as.Date(vFieldsRaw$testdate, date_format)
-  # vFieldsRaw$ttime <- as.character(vFieldsRaw$test_starting_time)
-  # vFieldsRaw$stype <- as.character(vFieldsRaw$notes)
-  # vFieldsRaw$sage <- agecalc(as.Date(vFieldsRaw$dateofbirth, date_format),
-  #                            as.Date(vFieldsRaw$testdate, date_format))
-  # vFieldsRaw$seye <- as.character(vFieldsRaw$eye)
-  # vFieldsRaw$sbsx <- 15
-  # vFieldsRaw$sbsy <- -3
-  # vFieldsRaw$sfp <- vFieldsRaw$false_positives / vFieldsRaw$positive_catch_trials
-  # vFieldsRaw$sfn <- vFieldsRaw$false_negatives / vFieldsRaw$negative_catch_trials
-  # vFieldsRaw$sfl <- vFieldsRaw$repetitions / vFieldsRaw$questions
-  # vFieldsRaw$sduration <- as.character(vFieldsRaw$testduration)
-  # vFieldsRaw$spause <- NA
-  # 
-  # #exract final table
-  # finalIndex <-
-  #   c(
-  #     "id",
-  #     "tperimetry",
-  #     "talgorithm",
-  #     "tpattern",
-  #     "tdate",
-  #     "ttime",
-  #     "stype",
-  #     "sage",
-  #     "seye",
-  #     "sbsx",
-  #     "sbsy",
-  #     "sfp",
-  #     "sfn",
-  #     "sfl",
-  #     "sduration",
-  #     "spause"
-  #   )
-  # finalIndex <- c(finalIndex, paste("L", 1:59, sep = ""))
-  # 
-  # # return vf-object
-  # return(vFieldsRaw[, finalIndex])
+  return(resultList)
 }
 
 #' @rdname vfloaders
