@@ -261,7 +261,7 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
   dat$eye <- as.character(factor(dat$eye,
                                  levels = c(0, 1, 3),
                                  labels = c("OD", "OS", "OU")))
-  dat$date <- strptime(dat$testdate, format = "%d.%m.%Y")
+  dat$date <- as.Date(strptime(dat$testdate, format = "%d.%m.%Y"))
   dat$dob <- strptime(dat$dateofbirth, format = "%d.%m.%Y")
   dat$age <- getage(dat$dob, dat$date)
   dat$time <- dat$test_starting_time
@@ -377,12 +377,14 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
   
   resultList$get_sensitivities <-
     function(vf_id) {
-      cbind(resultList$fields[test1$fields$vfID == vf_id, ], resultList$sensitivities[[vf_id]])
+      rv <- cbind(resultList$fields[resultList$fields$vfID == vf_id, ], resultList$sensitivities[[vf_id]])
+      # rv$date <- as.Date(rv$date)
     }
   
   resultList$get_defects <-
     function(vf_id) {
-      cbind(resultList$fields[test1$fields$vfID == vf_id, ], resultList$defects[[vf_id]])
+      rv <- cbind(resultList$fields[resultList$fields$vfID == vf_id, ], resultList$defects[[vf_id]])
+      # rv$date <- as.Date(rv$date)
     }
   
   return(resultList)

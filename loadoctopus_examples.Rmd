@@ -1,0 +1,148 @@
+---
+title: "Examples loadoctopus"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+The eyesuite software has an export function that creates a csv of visual fields that can be selected according to several criteria.
+
+Our version of Eyesuite, installed in Germany, uses a latin1-encoding and the date format "%d.%m.%Y". I am not sure, if this is handled differently in other installation and would be grateful for feedback in this regard.
+
+*NB: Problems may arise when semicolons are used in the "note" field in Eyesuite. We have trained our technicians to avoid this, but it has to be kept in mind when problems arise.*
+
+The csv-file is quite extensive. Besides the sensitivities, it also contains the coordinates and the normal values for the given age for all locations. Often, it contains different types of visual fields. 
+
+Therefore, I have decided to implement the loadoctopus function as a function that parses the csv-file into a list. Here, I show how information can be extracted from this list.
+
+*NB: This is the first, preliminary version.*
+
+## Loading the package and parsing the csv-file
+
+```{r parsing}
+
+# library(devtools)
+# install_github(...)
+
+library(visualFields)
+
+octopus_list <- loadoctopus("EyesuiteTestfile.csv")
+
+str(octopus_list)
+
+```
+
+## Patients
+
+The visualFields packages identifies each patients with a unique id.
+
+When the csv-file is parsed, an id is created and data.frame is created to save the first name, last name, and date of birth for each patient.
+
+```{r Patients}
+
+print(octopus_list$patients)
+
+```
+
+## Visual field types
+
+Different visual field patterns result in different column numbers in the visual field objects. Therefore, different lists are created. These are identified by a visual field id (vfID). The data.frame vf_types keeps track of these field types.
+
+```{r Visual field types}
+
+print(octopus_list$vf_types)
+
+```
+
+## Getting sensitivities
+
+With this id, a visual field object can be created. In order to avoid redundancy, sensitivities and further information on the visual field are saved in different lists:
+
+  - octopus_list$fields: general information
+  - octopus_list$sensitivities: sensitivities
+
+```{r Sensitivities}
+
+# G pattern, dynamic strategy: vfID = 1
+
+print(octopus_list$fields[octopus_list$fields$vfID == 1, ])
+print(octopus_list$sensitivities[[1]])
+
+```
+
+In order to simplify getting this information, the list contains a functions that returns a visual field object.
+
+```{r Using the function}
+
+# G pattern, dynamic strategy: vfID = 1
+
+sens <- octopus_list$get_sensitivities(1)
+
+print(sens)
+
+```
+
+## Getting defects
+
+Since the csv file also contains age-related normal values for each subject and each location, we can also directly calculate a defect list, without an explicit model for normal values.
+
+```{r defects}
+
+# M pattern (M = macula): vfID = 3
+
+def <- octopus_list$get_defects(3)
+
+print(def)
+
+```
+
+## Extracting locmaps and graphic parameters from the parsed file
+
+For many functions of the visualFields package, explicit information on locations and graphical parameters are needed. The locmap functions helps to create such tables. These are then loaded in the environment with special set functions.
+
+```{r Extracting locmaps}
+
+# M pattern (M = macula): vfID = 3
+
+m_locmap <- octopus_list$create_locmap(3)
+
+print(m_locmap)
+
+setlocmap(m_locmap)
+
+```
+
+For plotting fields, a gpar list is needed. This is not fully implemented, yet. However, a rudimentary list can be easily created.
+
+```{r Creating gpar list}
+
+test_gpar <- list()
+test_gpar$coord <- getlocmap()$coord
+test_gpar$tess <- vftess(getlocmap()$coord, floor = 0, delta = 3)
+setgpar(test_gpar)
+
+```
+
+Now, we can plot sensitivities. Note that the blind spot is outside the field for the macula test pattern.
+
+```{r Plotting sensitivities}
+
+vfM <- octopus_list$get_sensitivities(3)
+
+# I'm not sure why this step is necessary? Otherwise, validity check fails.
+vfM$date <- as.Date(vfM$date) 
+
+vfplot(vfM[1, ], type = "s")
+
+```
+
+# To Do
+
+Many functions can still not be used. Especially, an explicit model for age related normal values is necessary to plot defects. I will implement more functions as soon as I find the time.
+
