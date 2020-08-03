@@ -387,6 +387,8 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
       # rv$date <- as.Date(rv$date)
     }
   
+  resultList$patients <- unique(resultList$patients)
+  
   return(resultList)
 }
 
