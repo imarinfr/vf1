@@ -371,7 +371,6 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
       lmap$desc <- "This locmap was automatically created from the csv exported by Eyesuite. NB: The locations are not numbered according to the standard!"
       lmap$coord <- resultList$locmap[[vf_id]][, c("xod", "yod")]
       names(lmap$coord) <- c("x", "y")
-      lmap$bs <- NA
       return(lmap)
     }
   
