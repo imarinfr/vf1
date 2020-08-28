@@ -8,6 +8,7 @@
 \alias{vfplot}
 \alias{vfplotsens}
 \alias{vfplotdev}
+\alias{vfplotsdev}
 \alias{vfplotplr}
 \alias{vflegoplot}
 \alias{vflegoplotsens}
@@ -56,6 +57,8 @@ vfplot(vf, type = "td", ...)
 vfplotsens(gpar, vf, maxval, digits = 0, ...)
 
 vfplotdev(gpar, vf, dev, devp, digits = 0, ...)
+
+vfplotsdev(gpar, vf, maxval, dev, devp, digits = 0, ...)
 
 vfplotplr(vf, type = "td", alternative = "LT", xoffs = 0, yoffs = 0, ...)
 
@@ -119,8 +122,10 @@ hypotheses LT and GT (B for both)}
 \item{vf}{the visual fields data to plot}
 
 \item{type}{the type of data to plot: sensitivities (`\code{s}`),
-total deviation values (`\code{td}`), or pattern deviation
-values (`\code{pd}`). Default is `\code{td}`}
+total deviation values (`\code{td}`), pattern deviation values (`\code{pd}`),
+a hybrid plot that shows sensitivity grayscale with TD values and corresponding
+probability levels (`\code{tds}`), or PD values and corresponding probability
+levels (`\code{pds}`). Default is `\code{td}`.}
 
 \item{...}{other graphical arguments. See \code{\link{plot}}}
 
@@ -270,6 +275,10 @@ vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "s")
 vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "td")
 # PD values
 vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "pd")
+# hybrid sensitivities and TD values
+vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "tds")
+# hybrid sensitivities and PD values
+vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "pds")
 # plot results from pointwise linear regression for the series of
 # visual fields for the right eye in the dataset vfpwgSunyiu24d2
 # with sensitivity values

@@ -181,8 +181,10 @@ vfprogcolscheme <- function(probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 1),
 #' @rdname vfplots
 #' @param vf the visual fields data to plot
 #' @param type the type of data to plot: sensitivities (`\code{s}`),
-#' total deviation values (`\code{td}`), or pattern deviation
-#' values (`\code{pd}`). Default is `\code{td}`
+#' total deviation values (`\code{td}`), pattern deviation values (`\code{pd}`),
+#' a hybrid plot that shows sensitivity grayscale with TD values and corresponding
+#' probability levels (`\code{tds}`), or PD values and corresponding probability
+#' levels (`\code{pds}`). Default is `\code{td}`.
 #' @param ... other graphical arguments. See \code{\link{plot}}
 #' @examples
 #' # plot visual field values for the last field in the series for the first
@@ -193,6 +195,11 @@ vfprogcolscheme <- function(probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 1),
 #' vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "td")
 #' # PD values
 #' vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "pd")
+#' # hybrid sensitivities and TD values
+#' vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "tds")
+#' # hybrid sensitivities and PD values
+#' vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "pds")
+
 #' @export
 vfplot <- function(vf, type = "td", ...) {
   if(nrow(vf) != 1) stop("can plot only 1 visual field at a time")
@@ -203,21 +210,26 @@ vfplot <- function(vf, type = "td", ...) {
   # left or right eye
   if(vf$eye == "OS") gpar$tess$xlim <- gpar$tess$xlim[2:1]
   par(mar = c(0, 0, 0, 0), ...)
-  # dispatch to raw sensitivity (grayscale) plots or TD and PD (color) plots
-  if(type == "s")  {
-    maxdb <- nv$agem$model(vf$age)
-    # for locations in the blind spot, we input the values of the previous locations 
-    maxdb[which(is.na(maxdb))] <- maxdb[which(is.na(maxdb)) - 1]
+  # maximum values for grayscales used in type "s", "tds", and "pds"
+  maxdb <- nv$agem$model(vf$age)
+  # for locations in the blind spot, we input the values of the previous locations 
+  maxdb[which(is.na(maxdb))] <- maxdb[which(is.na(maxdb)) - 1]
+  # dispatch to raw sensitivity (grayscale) plots, TD and PD (color) plots, or the hybrid
+  # sensitivity with TD and PD plot
+  if(type == "s") # sensitivities
     vfplotsens(gpar, vf[,locs], maxdb, ...)
-  } else {
-    if(type == "td") {
+  else { # TD, PD or hybrid plots
+    if(type %in% c("td", "tds")) {
       dev  <- gettd(vf)
       devp <- gettdp(dev)
-    } else if(type == "pd") {
+    } else if(type %in% c("pd", "pds")) {
       dev  <- getpd(gettd(vf))
       devp <- getpdp(dev)
-    } else stop("wrong type of plot requested. Must be 's', 'td', or 'pd'")
-    vfplotdev(gpar, vf[,locs], dev[,locs], devp[,locs], ...)
+    } else stop("wrong type of plot requested. Must be 's', 'td', 'pd', 'td', or 'pds'")
+    if(type %in% c("td", "pd"))
+      vfplotdev(gpar, vf[,locs], dev[,locs], devp[,locs], ...)
+    else
+      vfplotsdev(gpar, vf[,locs], maxdb, dev[,locs], devp[,locs], ...)
   }
 }
 
@@ -235,10 +247,8 @@ vfplotsens <- function(gpar, vf, maxval, digits = 0, ...) {
   tcol <- rep(0.3, length(vf))
   tcol[fcol < 0.5] <- 0.7
   # blind spot
-  if (!is.na(getlocmap()$bs)) {
-    fcol[getlocmap()$bs] <- 1
-    tcol[getlocmap()$bs] <- 0.3
-  }
+  fcol[getlocmap()$bs] <- 1
+  tcol[getlocmap()$bs] <- 0.3
   # convert to hexadecimal color
   fcol <- rgb(fcol, fcol, fcol)
   tcol <- rgb(tcol, tcol, tcol)
@@ -282,6 +292,43 @@ vfplotdev <- function(gpar, vf, dev, devp, digits = 0, ...) {
   txt <- round(dev, digits)
   txt[is.na(dev)] <- ""
   text(gpar$coord$x, gpar$coord$y, txt, col = rgb(0.3, 0.3, 0.3), ...)
+}
+
+#' @rdname vfplots
+#' @export
+vfplotsdev <- function(gpar, vf, maxval, dev, devp, digits = 0, ...) {
+  # background gray shades
+  fcol <- (vf - gpar$tess$floor) / (maxval - gpar$tess$floor)
+  fcol[fcol > 1] <- 1
+  fcol[fcol < 0] <- 0
+  # foreground text gray shades
+  tcol <- rep(0.3, length(vf))
+  tcol[fcol < 0.5] <- 0.7
+  # blind spot
+  fcol[getlocmap()$bs] <- 1
+  tcol[getlocmap()$bs] <- 0.3
+  # convert to hexadecimal color
+  fcol <- rgb(fcol, fcol, fcol)
+  tcol <- rgb(tcol, tcol, tcol)
+  # background colors and foreground text gray shades
+  cols <- gpar$colmap$fun(vf, devp)
+  plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE,
+       axes = FALSE, asp = 1,
+       xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
+  # plot polygons
+  for(i in 1:length(gpar$tess$tiles)) {
+    tiles  <- gpar$tess$tiles[[i]] # get tiles
+    otiles <- polyoffset(tiles, -0.75, jointype = "round")[[1]] # shrink tiles to plot white region
+    polygon(tiles, col = cols[i], border = "lightgray")  # plot tiles with grayscales
+    polygon(otiles, col = fcol[i], border = NA) # plot tiles with white background to show text
+  }
+  # add blind spot
+  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)  
+  # outer hull
+  polygon(gpar$tess$hull, border = "lightgray")   
+  txt <- round(dev, digits)
+  txt[is.na(dev)] <- ""
+  text(gpar$coord$x, gpar$coord$y, txt, col = tcol, ...)
 }
 
 #' @rdname vfplots
