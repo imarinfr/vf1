@@ -287,13 +287,13 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
   
   # create a table with keys for each patient
   dat$patient_identifier <- paste0(dat$lastname, dat$firstname, dat$dob, sep = ", ")
-  dat$id <- as.integer(as.factor(dat$patient_identifier))
+  dat$id <- as.integer(factor(dat$patient_identifier, levels = unique(dat$patient_identifier), ordered = TRUE))
   
   resultList$patients <- dat[, c("id", "firstname", "lastname", "dob")]
   
   # create a table with keys for each visual field type
   dat$vf_identifier <- paste(dat$tperimetry, dat$pattern, dat$locnum, dat$strategy, sep = ", ")
-  dat$vfID <- as.integer(as.factor(dat$vf_identifier))
+  dat$vfID <- as.integer(factor(dat$vf_identifier, levels = unique(dat$vf_identifier), ordered = TRUE))
   
   vf_index <- dat$vfID
   
@@ -371,7 +371,6 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
       lmap$desc <- "This locmap was automatically created from the csv exported by Eyesuite. NB: The locations are not numbered according to the standard!"
       lmap$coord <- resultList$locmap[[vf_id]][, c("xod", "yod")]
       names(lmap$coord) <- c("x", "y")
-      lmap$bs <- NA
       return(lmap)
     }
   
@@ -386,6 +385,8 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
       rv <- cbind(resultList$fields[resultList$fields$vfID == vf_id, ], resultList$defects[[vf_id]])
       # rv$date <- as.Date(rv$date)
     }
+  
+  resultList$patients <- unique(resultList$patients)
   
   return(resultList)
 }

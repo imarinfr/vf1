@@ -235,10 +235,8 @@ vfplotsens <- function(gpar, vf, maxval, digits = 0, ...) {
   tcol <- rep(0.3, length(vf))
   tcol[fcol < 0.5] <- 0.7
   # blind spot
-  if (!is.na(getlocmap()$bs)) {
-    fcol[getlocmap()$bs] <- 1
-    tcol[getlocmap()$bs] <- 0.3
-  }
+  fcol[getlocmap()$bs] <- 1
+  tcol[getlocmap()$bs] <- 0.3
   # convert to hexadecimal color
   fcol <- rgb(fcol, fcol, fcol)
   tcol <- rgb(tcol, tcol, tcol)
