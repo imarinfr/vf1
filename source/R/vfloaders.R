@@ -16,6 +16,7 @@
 #' @param type type of patient. It can be `\code{ctr}` (for control or healthy
 #' subject-eye) or `\code{pwg}` (for patient with glaucoma) or other
 #' @param repeated function to apply if there are repeated values in a particular location
+#' @family vfloaders
 #' @export
 loadhfaxml <- function(file, type = "pwg", repeated = mean) {
   vf <- td <- tdp <- pd <- pdp <- g <- gp <- NA
@@ -228,9 +229,31 @@ loadhfadicom <- function(file, type = "pwg", repeated = mean) {
   return(list(vf = vf, td = td, tdp = tdp, pd = pd, pdp = pdp, g = g, gp = gp))
 }
 
-#' @rdname vfloaders
-#' @param dateFormat format to be used for date. Its default value
-#' is \code{\%d.\%m.\%Y}
+#' Import data from Haag-Streit Eyesuite
+#' 
+#' Parses csv-files exported from the Eyesuite Software,
+#' is used to store and analyze data from Octopus perimeters.
+#' 
+#' The parser also extracts information on visual field patterns and normal values. The list that is returned contains
+#' data frames which are structured with keys so that redundancy is minimized (similar to a relational database). Use
+#' the functions included in the list to extract meaningful tables.
+#' 
+#' 
+#' @param file name of the csv file exported by the eyesuite software
+#' @param type type of patient. It can be `\code{ctr}` (for control or healthy
+#' subject-eye) or `\code{pwg}` (for patient with glaucoma) or other
+#' @param repeated function to apply if there are repeated values in a particular location
+#' @param dateFormat format to be used for date. Its default value is \%d.\%m.\%Y
+#' 
+#' @return A list with data frames and functions to extract tables.
+#' 
+#' These functions are: create_locmap(vf_id), get_sensitivities(vf_id), and get_defects(vf_id).
+#'   
+#'  These functions take the vf_id (which identifies different types of fields) as a parameter. This key can be found in the vf_types data frame of the returned list.
+#' 
+#' @family vfloaders
+#' @seealso Detailed examples: \url{https://rpubs.com/huchzi/645357}
+#' 
 #' @export
 loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m.%Y") {
   
