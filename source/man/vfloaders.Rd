@@ -3,7 +3,6 @@
 \name{loadhfaxml}
 \alias{loadhfaxml}
 \alias{loadhfadicom}
-\alias{loadoctopus}
 \alias{loadhfaxmlbatch}
 \alias{loadhfadicombatch}
 \title{Loaders from perimeters}
@@ -11,8 +10,6 @@
 loadhfaxml(file, type = "pwg", repeated = mean)
 
 loadhfadicom(file, type = "pwg", repeated = mean)
-
-loadoctopus(file, type = "pwg", repeated = mean, dateFormat = "\%d.\%m.\%Y")
 
 loadhfaxmlbatch(file, repeated = mean)
 
@@ -30,9 +27,6 @@ corresponding patient type, respectively}
 subject-eye) or `\code{pwg}` (for patient with glaucoma) or other}
 
 \item{repeated}{function to apply if there are repeated values in a particular location}
-
-\item{dateFormat}{format to be used for date. Its default value
-is \code{\%d.\%m.\%Y}}
 }
 \value{
 visual field data
@@ -47,3 +41,8 @@ export license. The DICOMM loader is also a parser to read HFA data generated in
 DICOMM file. The loader for the Octopus perimeter by Haag-Streit is a csv reader
 from files generated with the Eyesuite software
 }
+\seealso{
+Other vfloaders: 
+\code{\link{loadoctopus}()}
+}
+\concept{vfloaders}
