@@ -4,7 +4,9 @@
 \name{vfpwgRetest24d2}
 \alias{vfpwgRetest24d2}
 \title{Short-term retest static automated perimetry data}
-\format{See section \code{Structure of visual fields data} in \code{\link{vfdesc}}}
+\format{
+See section \code{Structure of visual fields data} in \code{\link{vfdesc}}
+}
 \usage{
 vfpwgRetest24d2
 }

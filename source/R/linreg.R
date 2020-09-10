@@ -141,7 +141,7 @@ glr <- function(g, type = "md", testSlope = 0) {
   pred <- sl * years + int
   if(type == "sd" || type == "psd") pval <- 1 - pval
   return(list(id = g$id[1], eye = g$eye[1], type = type, testSlope = testSlope,
-              nvisits = nvisits, years = years, data = y, pred = pred,
+              nvisits = nvisits, dates = g$date, years = years, data = y, pred = pred,
               sl = sl, int = int, se = se, tval = tval, pval = 100 * pval))
 }
 
@@ -191,14 +191,17 @@ plr <- function(vf, type = "td", testSlope = 0) {
   # predicted values
   pred <- sapply(as.list(rbind(int, sl)), function(beta) {beta[1] + beta[2] * years})
   return(list(id = vf$id[1], eye = vf$eye[1], type = type, testSlope = testSlope,
-              nvisits = nvisits, years = years, data = vf[,getvfcols()], pred = pred,
+              nvisits = nvisits, dates = vf$date, years = years, data = vf[,getvfcols()], pred = pred,
               sl = sl, int = int, se = se, tval = tval, pval = 100 * pval))
 }
 
 #' @rdname linreg
 #' @param nperm number of permutations. If the number of visits is 7 or less, then
 #' \code{nperm = factorial(nrow(vf))}. For series greater than 8 visits, default is
-#' factorial(7)
+#' factorial(7). For series up to 7 visits, it is the factorial of the number of visits
+#' (with less than 7 visits, the number of possible permutations is small and results
+#' can be unreliable. For instance, for 5 visits, the number of possible permutations is
+#' only 120.)
 #' @param trunc truncation value for the Truncated Product Method (see reference)
 #' @export
 poplr <- function(vf, type = "td", testSlope = 0, nperm = factorial(7), trunc = 1) {
@@ -221,25 +224,26 @@ poplr <- function(vf, type = "td", testSlope = 0, nperm = factorial(7), trunc = 
     # is number of permutations is smaller than nrow(porder) do random sampling
     if(nperm < nrow(porder))
       porder <- rbind(porder[1,], porder[sample(nrow(porder), nperm - 1),])
+    else nperm <- nrow(porder)
   } else {
     if(nperm > 10000)
-      stop("I'm sorry Dave, I'm afraid I can't do that.
-           I think you know what the problem is just as well as I do.")
+      stop("I'm sorry Dave, I'm afraid I can't do that. I think you know what the problem is just as well as I do.")
     porder <- t(replicate(factorial(8), c(1:nvisits)[sample(nvisits)]))
     porder <- rbind(c(1:nvisits), porder)
     porder <- unique(porder)[1:nperm,]
+    if(nrow(porder) != nperm)
+      stop("something went wrong and did not get the number of permutations you wanted")
   }
-  if(nrow(porder) != nperm) stop("something went wrong and did not get the number of permutations you wanted")
   # get the p-values from pointwise linear regression for series and all permumtations
   pstats <- poplrpvals(y, years, porder, testSlope)
   # ... and compute the combined S statistic, after removing the blind spot
   pval <- pstats$permutations$pval
   if(length(bs) > 0) pval <- pval[,-bs]
-  cstats <- poplrsstats(pval)
+  cstats <- poplrsstats(pval, trunc = trunc)
   # predicted values
   pred <- sapply(as.list(rbind(pstats$int, pstats$sl)), function(beta) {beta[1] + beta[2] * years})
   return(list(id = vf$id[1], eye = vf$eye[1], type = type, testSlope = testSlope,
-              nvisits = nvisits, years = years, data = vf[,getvfcols()], pred = pred,
+              nvisits = nvisits, dates = vf$date, years = years, data = vf[,getvfcols()], pred = pred,
               sl = pstats$sl, int = pstats$int, se = pstats$se, tval = pstats$tval,
               pval = 100 * pstats$pval, nperm = nperm,
               csl = cstats$csl, cslp = 100 * cstats$cslp,
@@ -328,16 +332,23 @@ poplrsstats <- function(pval, trunc = 1) {
   # init
   nperm <- nrow(pval)
   # Apply the Truncated Product Method if required (i.e. trunc between 0 and 1)
-  kl <- matrix(rep(1, nrow(pval) * ncol(pval)), nrow(pval), ncol(pval)) # for left-tail analysis
-  kl[pval > trunc] <- 0
-  kr <- matrix(rep(1, nrow(pval) * ncol(pval)), nrow(pval), ncol(pval)) # for right-tail analysis
-  kr[(1 - pval) > trunc] <- 0
+  # left-tail analysis
+  tpl <- apply(pval, 1, min)
+  tpl[tpl < trunc] <- trunc
+  kl <- matrix(rep(1, nrow(pval) * ncol(pval)), nrow(pval), ncol(pval))
+  kl[pval > tpl] <- 0
+  # right-tail analysis
+  pvalr <- 1 - pval
+  tpr <- apply(pvalr, 1, min)
+  tpr[tpr < trunc] <- trunc
+  kr <- matrix(rep(1, nrow(pvalr) * ncol(pvalr)), nrow(pvalr), ncol(pvalr))
+  kr[pvalr > tpr] <- 0
   # combine p-value test statistics with a modified Fisher S statistic
-  csl <- -rowSums(kl * log10(pval))     / apply(kl, 1, sum)
-  csr <- -rowSums(kr * log10(1 - pval)) / apply(kr, 1, sum)
+  csl <- -rowSums(kl * log(pval))
+  csr <- -rowSums(kr * log(1 - pval))
   # observed and permutation test statistics
-  cslp <- 1 - rank(csl)[1] / nperm
-  csrp <- 1 - rank(csr)[1] / nperm
-  return(list(csl = csl[1], cslp = cslp, cslall = csl,
-              csp = csr[1], csrp = csrp, cslpall = csr))
+  cslp <- 1 - rank(csl) / nperm
+  csrp <- 1 - rank(csr) / nperm
+  return(list(csl = csl[1], cslp = cslp[1], cslall = csl, cslpall = cslp,
+              csr = csr[1], csrp = csrp[1], csrall = csr, csrpall = csrp))
 }

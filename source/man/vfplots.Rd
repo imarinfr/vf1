@@ -8,6 +8,7 @@
 \alias{vfplot}
 \alias{vfplotsens}
 \alias{vfplotdev}
+\alias{vfplotsdev}
 \alias{vfplotplr}
 \alias{vflegoplot}
 \alias{vflegoplotsens}
@@ -36,7 +37,7 @@ vfgpar(
     colorRampPalette(c("#00FF00", "#008000"))(4))
 )
 
-vftess(coord, floor = 0, expand = 5)
+vftess(coord, floor = 0, delta = 3)
 
 vfcolscheme(
   probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 0.98, 0.99, 0.995, 1),
@@ -57,7 +58,9 @@ vfplotsens(gpar, vf, maxval, digits = 0, ...)
 
 vfplotdev(gpar, vf, dev, devp, digits = 0, ...)
 
-vfplotplr(vf, type = "td", alternative = "LT", ...)
+vfplotsdev(gpar, vf, maxval, dev, devp, digits = 0, ...)
+
+vfplotplr(vf, type = "td", alternative = "LT", xoffs = 0, yoffs = 0, ...)
 
 vflegoplot(vf, type = "td", grp = 3, ...)
 
@@ -80,8 +83,8 @@ vfplotsparklines(
   vf,
   type = "td",
   thr = 2,
-  width = 5,
-  height = width,
+  width = 4,
+  height = 2,
   add = FALSE,
   ...
 )
@@ -114,16 +117,15 @@ not equal (NE)}
 \item{bprobs, bcols}{color map for progression with blth alternative
 hypotheses LT and GT (B for both)}
 
-\item{expand}{expansion factor. Hard to explain, easy to understand by trying
-different values and graphing the results. It is how large to make the outer
-hull for the tesselation with respect to the grid of visual field locations.
-Default is 5\% of the range}
+\item{delta}{Distance over which the boundary should be shifted. See for \code{\link{polyclip}}}
 
 \item{vf}{the visual fields data to plot}
 
 \item{type}{the type of data to plot: sensitivities (`\code{s}`),
-total deviation values (`\code{td}`), or pattern deviation
-values (`\code{pd}`). Default is `\code{td}`}
+total deviation values (`\code{td}`), pattern deviation values (`\code{pd}`),
+a hybrid plot that shows sensitivity grayscale with TD values and corresponding
+probability levels (`\code{tds}`), or PD values and corresponding probability
+levels (`\code{pds}`). Default is `\code{td}`.}
 
 \item{...}{other graphical arguments. See \code{\link{plot}}}
 
@@ -141,6 +143,9 @@ values (`\code{pd}`). Default is `\code{td}`}
 Allowed values are `\code{LT}` (as in "lower than", default),
 `\code{GT}` (as in "greater than"), `\code{NE}` (as in "not equal"),
 and `\code{both}` (both `\code{LT}` and `\code{GT}`)}
+
+\item{xoffs, yoffs}{offset x and y where to print the slope values. That is,
+the distance from the center of each Voronoy polygons in degrees of visual angle}
 
 \item{grp}{number of baseline (first) and last visual fields to group.
 Default is `\code{3}`}
@@ -163,16 +168,16 @@ Default is `\code{3}`}
 
 \item{devpl}{last visual field (TD or PD) deviation probability values}
 
-\item{thr}{threshold used for the standard deviation of residuals
+\item{thr}{threshold used for the median absolute deviation of residuals
 from simple linear regression. If greater than the threshold, the
 sparkline for that location is plotted in red and with a thicker line.
 Default is `\code{2}` (dB)}
 
 \item{width}{the width of each pointwise sparkline plot. Default is
-`\code{5}` (degrees of visual angle)}
+`\code{4}` (degrees of visual angle)}
 
 \item{height}{the height of each pointwise sparkline plot. Default is
-the same as `\code{width}`}
+`\code{2}` (degrees of visual angle)}
 
 \item{add}{whether to generate a new plot (`\code{FALSE}`, as default)
 or to add to an existing figure (`\code{TRUE}`)}
@@ -270,6 +275,10 @@ vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "s")
 vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "td")
 # PD values
 vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "pd")
+# hybrid sensitivities and TD values
+vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "tds")
+# hybrid sensitivities and PD values
+vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "pds")
 # plot results from pointwise linear regression for the series of
 # visual fields for the right eye in the dataset vfpwgSunyiu24d2
 # with sensitivity values

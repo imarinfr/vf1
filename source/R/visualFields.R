@@ -27,23 +27,26 @@
 #' Turpin A, Artes PH, & McKendrick AM. \emph{The Open Perimetry Interface:
 #' An enabling tool for clinical visual psychophysics}. Journal of Vision,
 #' 2012, 12(11):22, 21–25
-#' @importFrom utils read.csv write.csv packageDate packageVersion setTxtProgressBar
-#'             txtProgressBar
+#' @import utils graphics
 #' @importFrom stats sd lm quantile predict aggregate approx na.pass optimize pt var mad
 #' @importFrom Hmisc wtd.mean wtd.var wtd.quantile
 #' @importFrom dplyr filter
 #' @importFrom gtools combinations
 #' @importFrom combinat permn
 #' @importFrom XML xmlParse xmlToList
-#' @importFrom oro.dicom readDICOM
-#' @importFrom graphics par plot polygon text grconvertX grconvertY axis box lines
-#'             rect segments screen split.screen close.screen hist points title
+#' @importFrom oro.dicom readDICOMFile
 #' @importFrom grDevices colorRampPalette rgb col2rgb chull pdf dev.off
-#' @importFrom polyclip polyclip
+#' @importFrom polyclip polyclip polyoffset
 #' @importFrom deldir deldir tile.list
 #' @importFrom plotrix draw.circle draw.ellipse
 #' @importFrom tools toTitleCase
 #' @importFrom rlang sym
+#' @importFrom shiny fluidPage titlePanel sidebarLayout sidebarPanel column selectInput div
+#'             mainPanel br tabsetPanel tabPanel plotOutput htmlOutput actionButton icon
+#'             reactiveVal observeEvent updateSelectInput renderText renderPlot shinyApp
+#' @importFrom shinyjs useShinyjs
+#' @importFrom DT dataTableOutput renderDataTable
+#' @importFrom htmlTable htmlTable
 "_PACKAGE"
 
 #' @rdname vfenv

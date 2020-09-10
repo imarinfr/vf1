@@ -111,21 +111,15 @@ vfgpar <- function(coord, tess = vftess(coord),
 
 #' @rdname vfplots
 #' @param floor Flooring value, typically in dB. Default is 0
-#' @param expand expansion factor. Hard to explain, easy to understand by trying
-#'   different values and graphing the results. It is how large to make the outer
-#'   hull for the tesselation with respect to the grid of visual field locations.
-#'   Default is 5\% of the range
+#' @param delta Distance over which the boundary should be shifted. See for \code{\link{polyclip}}
 #' @examples
 #' # generate a structure with default tesselation for the 30-2 map
 #' vftess(locmaps$p30d2$coord)
 #' @export
-vftess <- function(coord, floor = 0, expand = 5) {
-  # get expansion
-  expand <- expand / 100 * max(c(max(coord$x) - min(coord$x), max(coord$y) - min(coord$y)))
+vftess <- function(coord, floor = 0, delta = 3) {
   # get and expand the convex hull
   hull <- coord[chull(coord),]
-  hull$x <- hull$x + sign(hull$x) * expand
-  hull$y <- hull$y + sign(hull$y) * expand
+  hull <- as.data.frame(polyoffset(hull, delta, jointype = "round")[[1]])
   # get tiles
   tiles <- lapply(tile.list(deldir(coord)), function(tt) data.frame(x = tt$x, y = tt$y))
   # and intersect with the convex hull to obtain the
@@ -153,16 +147,10 @@ vfcolscheme <- function(probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 0.98, 0.99, 
   fun <- as.function(alist(vf = , devp = , {
     vf[which(is.na(devp))]   <- Inf
     devp[which(is.na(devp))] <- Inf # assign infinite to locations to ignore (e.g., blind spot)
-    tiles <- rep(NA, length(devp))
-    txt  <- rep("#000000", length(devp))
-    for(i in nrow(map):1)
-      tiles[devp <= map$probs[i]] <- map$cols[i]
-    tiles[vf < floor] <- "#000000" # not seen are plotted in black
-    colrgb <- col2rgb(tiles) / 255
-    txt[(0.2126 * colrgb[1,]
-         + 0.7152 * colrgb[2,]
-         + 0.0722 * colrgb[3,]) < 0.4] <- "#FFFFFF"
-    return(list(tiles = tiles, txt = txt))
+    cols <- rep(NA, length(devp))
+    for(i in nrow(map):1) cols[devp <= map$probs[i]] <- map$cols[i]
+    cols[vf < floor] <- "#000000" # not seen are plotted in black
+    return(cols)
   }))
   return(list(map = map, fun = fun))
 }
@@ -183,13 +171,9 @@ vfprogcolscheme <- function(probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 1),
   map <- data.frame(probs = 100 * probs, cols = cols, stringsAsFactors = FALSE) # fucking hate R defaulting to factors
   fun <- as.function(alist(vals = , {
     vals[which(is.na(vals))] <- Inf # Assign infinite to locations to ignore (e.g., blind spot)
-    tiles <- rep(NA, length(vals))
-    txt  <- rep("#000000", length(vals))
-    for(i in nrow(map):1)
-      tiles[vals <= map$probs[i]] <- map$cols[i]
-    colrgb <- col2rgb(tiles) / 255
-    txt[(0.2126 * colrgb[1,] + 0.7152 * colrgb[2,] + 0.0722 * colrgb[3,]) < 0.4] <- "#FFFFFF"
-    return(list(tiles = tiles, txt = txt))
+    cols <- rep(NA, length(vals))
+    for(i in nrow(map):1) cols[vals <= map$probs[i]] <- map$cols[i]
+    return(cols)
   }))
   return(list(map = map, fun = fun))
 }
@@ -197,8 +181,10 @@ vfprogcolscheme <- function(probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 1),
 #' @rdname vfplots
 #' @param vf the visual fields data to plot
 #' @param type the type of data to plot: sensitivities (`\code{s}`),
-#' total deviation values (`\code{td}`), or pattern deviation
-#' values (`\code{pd}`). Default is `\code{td}`
+#' total deviation values (`\code{td}`), pattern deviation values (`\code{pd}`),
+#' a hybrid plot that shows sensitivity grayscale with TD values and corresponding
+#' probability levels (`\code{tds}`), or PD values and corresponding probability
+#' levels (`\code{pds}`). Default is `\code{td}`.
 #' @param ... other graphical arguments. See \code{\link{plot}}
 #' @examples
 #' # plot visual field values for the last field in the series for the first
@@ -209,6 +195,11 @@ vfprogcolscheme <- function(probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 1),
 #' vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "td")
 #' # PD values
 #' vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "pd")
+#' # hybrid sensitivities and TD values
+#' vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "tds")
+#' # hybrid sensitivities and PD values
+#' vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "pds")
+
 #' @export
 vfplot <- function(vf, type = "td", ...) {
   if(nrow(vf) != 1) stop("can plot only 1 visual field at a time")
@@ -219,21 +210,26 @@ vfplot <- function(vf, type = "td", ...) {
   # left or right eye
   if(vf$eye == "OS") gpar$tess$xlim <- gpar$tess$xlim[2:1]
   par(mar = c(0, 0, 0, 0), ...)
-  # dispatch to raw sensitivity (grayscale) plots or TD and PD (color) plots
-  if(type == "s")  {
-    maxdb <- nv$agem$model(vf$age)
-    # for locations in the blind spot, we input the values of the previous locations 
-    maxdb[which(is.na(maxdb))] <- maxdb[which(is.na(maxdb)) - 1]
+  # maximum values for grayscales used in type "s", "tds", and "pds"
+  maxdb <- nv$agem$model(vf$age)
+  # for locations in the blind spot, we input the values of the previous locations 
+  maxdb[which(is.na(maxdb))] <- maxdb[which(is.na(maxdb)) - 1]
+  # dispatch to raw sensitivity (grayscale) plots, TD and PD (color) plots, or the hybrid
+  # sensitivity with TD and PD plot
+  if(type == "s") # sensitivities
     vfplotsens(gpar, vf[,locs], maxdb, ...)
-  } else {
-    if(type == "td") {
+  else { # TD, PD or hybrid plots
+    if(type %in% c("td", "tds")) {
       dev  <- gettd(vf)
       devp <- gettdp(dev)
-    } else if(type == "pd") {
+    } else if(type %in% c("pd", "pds")) {
       dev  <- getpd(gettd(vf))
       devp <- getpdp(dev)
-    } else stop("wrong type of plot requested. Must be 's', 'td', or 'pd'")
-    vfplotdev(gpar, vf[,locs], dev[,locs], devp[,locs], ...)
+    } else stop("wrong type of plot requested. Must be 's', 'td', 'pd', 'td', or 'pds'")
+    if(type %in% c("td", "pd"))
+      vfplotdev(gpar, vf[,locs], dev[,locs], devp[,locs], ...)
+    else
+      vfplotsdev(gpar, vf[,locs], maxdb, dev[,locs], devp[,locs], ...)
   }
 }
 
@@ -248,11 +244,11 @@ vfplotsens <- function(gpar, vf, maxval, digits = 0, ...) {
   fcol[fcol > 1] <- 1
   fcol[fcol < 0] <- 0
   # foreground text gray shades
-  tcol <- rep(0, length(vf))
-  tcol[fcol < 0.5] <- 0.9
+  tcol <- rep(0.3, length(vf))
+  tcol[fcol < 0.5] <- 0.7
   # blind spot
   fcol[getlocmap()$bs] <- 1
-  tcol[getlocmap()$bs] <- 0.5
+  tcol[getlocmap()$bs] <- 0.3
   # convert to hexadecimal color
   fcol <- rgb(fcol, fcol, fcol)
   tcol <- rgb(tcol, tcol, tcol)
@@ -261,11 +257,11 @@ vfplotsens <- function(gpar, vf, maxval, digits = 0, ...) {
        xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
   # plot polygons
   for(i in 1:length(gpar$tess$tiles))
-    polygon(gpar$tess$tiles[[i]], border = "lightgray", col = fcol[i])
+    polygon(gpar$tess$tiles[[i]], col = fcol[i], border = NA)
   # add blind spot
-  draw.ellipse(15, -1.5, 2.75, 3.75, border = "red", lwd = 2)
+  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)
   # outer hull
-  polygon(gpar$tess$hull, border = "black")
+  polygon(gpar$tess$hull, border = "lightgray")
   txt <- round(vf, digits)
   txt[is.na(vf)] <- ""
   txt[vf < gpar$tess$floor] <- paste0("<", gpar$tess$floor)
@@ -283,15 +279,56 @@ vfplotdev <- function(gpar, vf, dev, devp, digits = 0, ...) {
        axes = FALSE, asp = 1,
        xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
   # plot polygons
-  for(i in 1:length(gpar$tess$tiles))
-    polygon(gpar$tess$tiles[[i]], border = "lightgray", col = cols$tiles[i])
+  for(i in 1:length(gpar$tess$tiles)) {
+    tiles  <- gpar$tess$tiles[[i]] # get tiles
+    otiles <- polyoffset(tiles, -0.75, jointype = "round")[[1]] # shrink tiles to plot white region
+    polygon(tiles, col = cols[i], border = "lightgray")  # plot tiles with grayscales
+    polygon(otiles, col = "white", border = NA) # plot tiles with white background to show text
+  }
   # add blind spot
-  draw.ellipse(15, -1.5, 2.75, 3.75, col = "black")
+  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)  
   # outer hull
-  polygon(gpar$tess$hull, border = "black")
+  polygon(gpar$tess$hull, border = "lightgray")   
   txt <- round(dev, digits)
   txt[is.na(dev)] <- ""
-  text(gpar$coord$x, gpar$coord$y, txt, col = cols$txt, ...)
+  text(gpar$coord$x, gpar$coord$y, txt, col = rgb(0.3, 0.3, 0.3), ...)
+}
+
+#' @rdname vfplots
+#' @export
+vfplotsdev <- function(gpar, vf, maxval, dev, devp, digits = 0, ...) {
+  # background gray shades
+  fcol <- (vf - gpar$tess$floor) / (maxval - gpar$tess$floor)
+  fcol[fcol > 1] <- 1
+  fcol[fcol < 0] <- 0
+  # foreground text gray shades
+  tcol <- rep(0.3, length(vf))
+  tcol[fcol < 0.5] <- 0.7
+  # blind spot
+  fcol[getlocmap()$bs] <- 1
+  tcol[getlocmap()$bs] <- 0.3
+  # convert to hexadecimal color
+  fcol <- rgb(fcol, fcol, fcol)
+  tcol <- rgb(tcol, tcol, tcol)
+  # background colors and foreground text gray shades
+  cols <- gpar$colmap$fun(vf, devp)
+  plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE,
+       axes = FALSE, asp = 1,
+       xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
+  # plot polygons
+  for(i in 1:length(gpar$tess$tiles)) {
+    tiles  <- gpar$tess$tiles[[i]] # get tiles
+    otiles <- polyoffset(tiles, -0.75, jointype = "round")[[1]] # shrink tiles to plot white region
+    polygon(tiles, col = cols[i], border = "lightgray")  # plot tiles with grayscales
+    polygon(otiles, col = fcol[i], border = NA) # plot tiles with white background to show text
+  }
+  # add blind spot
+  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)  
+  # outer hull
+  polygon(gpar$tess$hull, border = "lightgray")   
+  txt <- round(dev, digits)
+  txt[is.na(dev)] <- ""
+  text(gpar$coord$x, gpar$coord$y, txt, col = tcol, ...)
 }
 
 #' @rdname vfplots
@@ -299,6 +336,8 @@ vfplotdev <- function(gpar, vf, dev, devp, digits = 0, ...) {
 #'   Allowed values are `\code{LT}` (as in "lower than", default),
 #'   `\code{GT}` (as in "greater than"), `\code{NE}` (as in "not equal"),
 #'   and `\code{both}` (both `\code{LT}` and `\code{GT}`)
+#' @param xoffs,yoffs offset x and y where to print the slope values. That is,
+#' the distance from the center of each Voronoy polygons in degrees of visual angle
 #' @examples
 #' # plot results from pointwise linear regression for the series of
 #' # visual fields for the right eye in the dataset vfpwgSunyiu24d2
@@ -309,13 +348,13 @@ vfplotdev <- function(gpar, vf, dev, devp, digits = 0, ...) {
 #' # PD values
 #' vfplotplr(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
 #' @export
-vfplotplr <- function(vf, type = "td", alternative = "LT", ...) {
+vfplotplr <- function(vf, type = "td", alternative = "LT", xoffs = 0, yoffs = 0, ...) {
   res <- plr(vf, type) # if more than 1 ID/eye then it crashes as it should
   gpar <- getgpar() # get graphical parameters
   # left or right eye
   if(vf$eye[1] == "OS") gpar$tess$xlim <- gpar$tess$xlim[2:1]
   # format intercept and slope
-  sl <- format(round(res$sl, 2), nsmall = 2L)
+  sl <- format(round(res$sl, 1), nsmall = 1L)
   sl[sl == "NA"] <- ""
   if(alternative == "LT") {
     cols <- getgpar()$progcolmap$lt$fun(res$pval)
@@ -330,13 +369,17 @@ vfplotplr <- function(vf, type = "td", alternative = "LT", ...) {
   plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE, axes = FALSE, asp = 1,
        xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
   # plot polygons
-  for(i in 1:length(gpar$tess$tiles))
-    polygon(gpar$tess$tiles[[i]], border = "lightgray", col = cols$tiles[i])
+  for(i in 1:length(gpar$tess$tiles)) {
+    tiles  <- gpar$tess$tiles[[i]] # get tiles
+    otiles <- polyoffset(tiles, -0.75, jointype = "round")[[1]] # shrink tiles to plot white region
+    polygon(tiles, col = cols[i], border = "lightgray")  # plot tiles with grayscales
+    polygon(otiles, col = "white", border = NA) # plot tiles with white background to show text
+  }
   # add blind spot
-  draw.ellipse(15, -1.5, 2.75, 3.75, col = "black")
+  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)
   # outer hull
-  polygon(gpar$tess$hull, border = "black")
-  text(gpar$coord$x, gpar$coord$y, sl, col = cols$txt, ...)
+  polygon(gpar$tess$hull, border = "lightgray")
+  text(gpar$coord$x + xoffs, gpar$coord$y + yoffs, sl, col = rgb(0.3, 0.3, 0.3), ...)
 }
 
 #' @rdname vfplots
@@ -405,8 +448,8 @@ vflegoplotsens <- function(gpar, vfb, vfl, maxb, maxl, crad = 2, digits = 1, ...
   fcol[fcol < 0] <- 0
   fcol[bs] <- 1
   # foreground text gray shades
-  tcol <- rep(0, length(vfl))
-  tcol[fcol < 0.5] <- 0.9
+  tcol <- rep(0.3, length(vfl))
+  tcol[fcol < 0.5] <- 0.7
   # convert to hexadecimal color
   fcol <- rgb(fcol, fcol, fcol)
   tcol <- rgb(tcol, tcol, tcol)
@@ -428,9 +471,9 @@ vflegoplotsens <- function(gpar, vfb, vfl, maxb, maxl, crad = 2, digits = 1, ...
   for(i in 1:length(gpar$tess$tiles))
     polygon(gpar$tess$tiles[[i]], border = "lightgray", col = fcolb[i])
   # add blind spot
-  draw.ellipse(15, -1.5, 2.75, 3.75, col = "black")
+  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)
   # outer hull
-  polygon(gpar$tess$hull, border = "black")
+  polygon(gpar$tess$hull, border = "lightgray")
   # draw circles
   for(i in 1:nrow(coord))
     draw.circle(coord$x[i], coord$y[i], radius = crad, col = fcol[i], lty = 0)
@@ -451,13 +494,18 @@ vflegoplotdev <- function(gpar, vfb, devb, devpb, vfl, devl, devpl, crad = 2, di
   colsl <- gpar$colmap$fun(vfl, devpl)
   # values to present
   txt <- round(devl - devb, digits)
+  # text color
+  tcol   <- rep(0.3, length(vfl))
+  colrgb <- col2rgb(colsl) / 255
+  tcol[(0.2126 * colrgb[1,] + 0.7152 * colrgb[2,] + 0.0722 * colrgb[3,]) < 0.4] <- 0.7
+  tcol <- rgb(tcol, tcol, tcol)
   # remove blind spot locations
   coord <- gpar$coord
   if(length(bs) > 0) {
     coord <- coord[-bs,]
     txt   <- txt[-bs]
-    colsl$tiles <- colsl$tiles[-bs]
-    colsl$txt   <- colsl$txt[-bs]
+    colsl <- colsl[-bs]
+    tcol  <- tcol[-bs]
   }
   ### plot
   par(mar = c(0, 0, 0, 0), ...)
@@ -465,26 +513,26 @@ vflegoplotdev <- function(gpar, vfb, devb, devpb, vfl, devl, devpl, crad = 2, di
        xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
   # plot polygons
   for(i in 1:length(gpar$tess$tiles))
-    polygon(gpar$tess$tiles[[i]], border = "lightgray", col = colsb$tiles[i])
+    polygon(gpar$tess$tiles[[i]], border = "lightgray", col = colsb[i])
   # add blind spot
-  draw.ellipse(15, -1.5, 2.75, 3.75, col = "black")
+  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)
   # outer hull
-  polygon(gpar$tess$hull, border = "black")
+  polygon(gpar$tess$hull, border = "lightgray")
   # draw circles
   for(i in 1:nrow(coord))
-    draw.circle(coord$x[i], coord$y[i], radius = crad, col = colsl$tiles[i], lty = 0)
-  text(coord$x, coord$y, txt, col = colsl$txt, ...)
+    draw.circle(coord$x[i], coord$y[i], radius = crad, col = colsl[i], lty = 0)
+  text(coord$x, coord$y, txt, col = tcol, ...)
 }
 
 #' @rdname vfplots
-#' @param thr threshold used for the standard deviation of residuals
+#' @param thr threshold used for the median absolute deviation of residuals
 #' from simple linear regression. If greater than the threshold, the
 #' sparkline for that location is plotted in red and with a thicker line.
 #' Default is `\code{2}` (dB)
 #' @param width the width of each pointwise sparkline plot. Default is
-#' `\code{5}` (degrees of visual angle)
+#' `\code{4}` (degrees of visual angle)
 #' @param height the height of each pointwise sparkline plot. Default is
-#' the same as `\code{width}`
+#' `\code{2}` (degrees of visual angle)
 #' @param add whether to generate a new plot (`\code{FALSE}`, as default)
 #' or to add to an existing figure (`\code{TRUE}`)
 #' @examples
@@ -497,8 +545,8 @@ vflegoplotdev <- function(gpar, vfb, devb, devpb, vfl, devl, devpl, crad = 2, di
 #' # PD values
 #' vfplotsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
 #' @export
-vfplotsparklines <- function(vf, type = "td", thr = 2, width = 5,
-                             height = width, add = FALSE, ...) {
+vfplotsparklines <- function(vf, type = "td", thr = 2, width = 4,
+                             height = 2, add = FALSE, ...) {
   if(nrow(unique(data.frame(vf$id, vf$eye))) != 1)
     stop("all visual fields must belong to the same subject id and eye")
   nv   <- getnv()
@@ -533,28 +581,28 @@ vfplotsparklines <- function(vf, type = "td", thr = 2, width = 5,
     # plot polygons
     lapply(gpar$tess$tiles, polygon, border = "lightgray", col = "#FFFFFF")
     # add blind spot
-    draw.ellipse(15, -1.5, 2.75, 3.75, col = "black")
+    draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)
     # outer hull
-    polygon(gpar$tess$hull, border = "black")
+    polygon(gpar$tess$hull, border = "lightgray")
   }
   # plot the spark lines:  for left eyes, handling figure positions is incompatible
   # with swapping the min and max x limits in the plot. We need a patch here
   if(gpar$tess$xlim[1] < gpar$tess$xlim[2]) {
     figs <- cbind(grconvertX(gpar$coord$x - width  / 2, to = "ndc"),
                   grconvertX(gpar$coord$x + width  / 2, to = "ndc"),
-                  grconvertY(gpar$coord$y - height / 2, to = "ndc"),
-                  grconvertY(gpar$coord$y + height / 2, to = "ndc"))
+                  grconvertY(gpar$coord$y, to = "ndc"),
+                  grconvertY(gpar$coord$y + height, to = "ndc"))
   } else {
     figs <- cbind(grconvertX(gpar$coord$x + width  / 2, to = "ndc"),
                   grconvertX(gpar$coord$x - width  / 2, to = "ndc"),
-                  grconvertY(gpar$coord$y - height / 2, to = "ndc"),
-                  grconvertY(gpar$coord$y + height / 2, to = "ndc"))
+                  grconvertY(gpar$coord$y, to = "ndc"),
+                  grconvertY(gpar$coord$y + height, to = "ndc"))
   }
-  opar <- par() # get parameters before splitting into pointwise sparkline plots
+  par0 <- par() # get parameters before splitting into pointwise sparkline plots
   for(i in 1:nrow(figs)) {
     par(fig = figs[i,], new = TRUE)
     plot(x, y[,i], type = "l", xlim = xlim, ylim = ylim, axes = FALSE, col = cols[i], ...)
   }
-  # reset relevant garphical parameters
-  par(fig = opar$fig, usr = opar$usr, xaxp = opar$xaxp, yaxp = opar$yaxp)
+  # reset back parameters
+  par(fig = par0$fig, fin = par0$fin, pin = par0$pin, usr = par0$usr, xaxp = par0$xaxp, yaxp = par0$yaxp)
 }

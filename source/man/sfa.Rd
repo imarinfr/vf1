@@ -2,25 +2,27 @@
 % Please edit documentation in R/vfreports.R
 \name{vfsfa}
 \alias{vfsfa}
-\title{Single Field Analysis}
+\alias{vfsfashiny}
+\title{Single Field Reporting}
 \usage{
 vfsfa(vf, file, ...)
+
+vfsfashiny(vf, ...)
 }
 \arguments{
 \item{vf}{visual field data}
 
-\item{file}{The pdf file name where to save the single visual field
-analysis report}
+\item{file}{The pdf file name where to save the one-page reports of single field analysis}
 
 \item{...}{other graphical arguments}
 }
 \description{
-Performs a single field analysis, including TD and PD
-values and probability maps and global indices and their p-values.
+Generates of one-page reports of single field analyses
 }
 \details{
 \itemize{
-  \item\code{vfsfa} saves a pdf with a visual field statistical report
-  \item\code{vfsfashiny} reports the results interactively with shiny
+  \item\code{vfsfa} saves a pdf with one-page reports of single field analyses
+  \item\code{vfsfashiny} generates interactive one-page reports of single field
+    analyses based on Shiny
 }
 }

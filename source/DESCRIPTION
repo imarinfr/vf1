@@ -2,7 +2,7 @@ Package: visualFields
 Type: Package
 Title: Statistical Methods for Visual Fields
 Version: 1.0
-Date: 2020-01-14
+Date: 2020-06-16
 Authors@R: c(
     person("Ivan", "Marin-Franch", email="imarinfr@optocom.es", role = c("cre", "aut", "rev", "cph")),
     person("William H", "Swanson", role = c("fnd", "dtc")),
@@ -19,8 +19,8 @@ Description: A collection of tools for analyzing the field of vision. It
     collaborative research.
 License: GPL-3
 URL: https://www.optocom.es
-Depends: R(>= 3.5),
-Imports: Hmisc, dplyr, polyclip, deldir, plotrix, gtools, combinat, XML, oro.dicom, rlang
+Depends: R(>= 3.5)
+Imports: Hmisc, dplyr, polyclip, deldir, plotrix, gtools, combinat, XML, oro.dicom, rlang, shiny, shinyjs, DT, htmlTable
 LazyData: true
 Encoding: UTF-8
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.1

@@ -4,7 +4,9 @@
 \name{vfctrIowaPeri}
 \alias{vfctrIowaPeri}
 \title{Peripheral visual field}
-\format{See section \code{Structure of visual fields data} in \code{\link{vfdesc}}}
+\format{
+See section \code{Structure of visual fields data} in \code{\link{vfdesc}}
+}
 \usage{
 vfctrIowaPeri
 }

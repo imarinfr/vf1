@@ -4,7 +4,9 @@
 \name{vfpwgSunyiu24d2}
 \alias{vfpwgSunyiu24d2}
 \title{Series of 24-2 static automated perimetry data for a patient with glaucoma}
-\format{See section \code{Structure of visual fields data} in \code{\link{vfdesc}}}
+\format{
+See section \code{Structure of visual fields data} in \code{\link{vfdesc}}
+}
 \usage{
 vfpwgSunyiu24d2
 }

@@ -16,6 +16,7 @@
 #' @param type type of patient. It can be `\code{ctr}` (for control or healthy
 #' subject-eye) or `\code{pwg}` (for patient with glaucoma) or other
 #' @param repeated function to apply if there are repeated values in a particular location
+#' @family vfloaders
 #' @export
 loadhfaxml <- function(file, type = "pwg", repeated = mean) {
   vf <- td <- tdp <- pd <- pdp <- g <- gp <- NA
@@ -140,7 +141,7 @@ loadhfaxml <- function(file, type = "pwg", repeated = mean) {
 loadhfadicom <- function(file, type = "pwg", repeated = mean) {
   vf <- td <- tdp <- pd <- pdp <- g <- gp <- NA
   # load and arrange data for processing
-  dat <- readDICOM(file)$hdr
+  dat <- readDICOMFile(file)$hdr
   dat <- as.data.frame(eval(parse(text = paste0("dat$`", file, "`"))),
                        stringsAsFactors = FALSE)
   # extract the groups we are interested on
@@ -228,11 +229,189 @@ loadhfadicom <- function(file, type = "pwg", repeated = mean) {
   return(list(vf = vf, td = td, tdp = tdp, pd = pd, pdp = pdp, g = g, gp = gp))
 }
 
-#' @rdname vfloaders
-#' @param dateFormat format to be used for date. Its default value
-#' is \code{\%d.\%m.\%Y}
+#' Import data from Haag-Streit Eyesuite
+#' 
+#' Parses csv-files exported from the Eyesuite Software,
+#' is used to store and analyze data from Octopus perimeters.
+#' 
+#' The parser also extracts information on visual field patterns and normal values. The list that is returned contains
+#' data frames which are structured with keys so that redundancy is minimized (similar to a relational database). Use
+#' the functions included in the list to extract meaningful tables.
+#' 
+#' 
+#' @param file name of the csv file exported by the eyesuite software
+#' @param type type of patient. It can be `\code{ctr}` (for control or healthy
+#' subject-eye) or `\code{pwg}` (for patient with glaucoma) or other
+#' @param repeated function to apply if there are repeated values in a particular location
+#' @param dateFormat format to be used for date. Its default value is \%d.\%m.\%Y
+#' 
+#' @return A list with data frames and functions to extract tables.
+#' 
+#' These functions are: create_locmap(vf_id), get_sensitivities(vf_id), and get_defects(vf_id).
+#'   
+#'  These functions take the vf_id (which identifies different types of fields) as a parameter. This key can be found in the vf_types data frame of the returned list.
+#' 
+#' @family vfloaders
+#' @seealso Detailed examples: \url{https://rpubs.com/huchzi/645357}
+#' 
 #' @export
 loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m.%Y") {
+  
+  # create a list for saving the results
+  resultList <- list()
+  
+  # read the csv-file exported by EyeSuite
+  dat <-
+    read.csv2(
+      file,
+      header = F,
+      quote = "",
+      stringsAsFactors = F,
+      fill = T,
+      col.names = paste("V", 1:2000, sep = ""),
+      encoding = "latin1"
+    )
+  
+  # rename some columns for better readibility of code
+  names(dat)[1:6] <- c("id", "lastname", "firstname","dateofbirth","sex","ethnicity")
+  names(dat)[11:12] <- c("apparatus", "serial_number")
+  names(dat)[18:24] <- c("eye","pattern","stimulus_size","stimulus_duration","stiumulus_luminance","strategy","tperimetry")
+  names(dat)[26:31] <- c("testduration","testdate","test_starting_time","reliability_factor","locnum","questions")
+  names(dat)[32:36] <- c("repetitions","positive_catch_trials","false_positives","negative_catch_trials","false_negatives")
+  names(dat)[37:41] <- c("notes","sphere","cylinder","axis","bcva")
+  
+  # recode some variables to factors
+  dat$eye <- as.character(factor(dat$eye,
+                                 levels = c(0, 1, 3),
+                                 labels = c("OD", "OS", "OU")))
+  dat$date <- as.Date(strptime(dat$testdate, format = "%d.%m.%Y"))
+  dat$dob <- strptime(dat$dateofbirth, format = "%d.%m.%Y")
+  dat$age <- getage(dat$dob, dat$date)
+  dat$time <- dat$test_starting_time
+  dat$type <- dat$note
+  dat$fpr <- round(dat$false_positives / dat$positive_catch_trials, 3)
+  dat$fnr <- round(dat$false_negatives / dat$negative_catch_trials, 3)
+  dat$fl <- dat$repetitions
+  dat$strategy <- factor(
+    dat$strategy,
+    levels = c(0, 1, 2, 3, 4, 6, 11),
+    labels = c("normal", "dynamic", "2LT/normal", "low vision", "1LT", "TOP", "GATE")
+  )
+  dat$pattern <- factor(dat$pattern)
+  dat$tperimetry <- factor(dat$tperimetry,
+                           levels = c(0, 1),
+                           labels = c("sap", "swap"))
+  
+  dat <- dat[!is.na(dat$strategy), ]
+  dat <- dat[!is.na(dat$pattern), ]
+  dat <- dat[!is.na(dat$tperimetry), ]
+  
+  if (nrow(dat) < 1) stop("There are no (currently) valid visual fields in this file.")
+  
+  # create a table with keys for each patient
+  dat$patient_identifier <- paste0(dat$lastname, dat$firstname, dat$dob, sep = ", ")
+  dat$id <- as.integer(factor(dat$patient_identifier, levels = unique(dat$patient_identifier), ordered = TRUE))
+  
+  resultList$patients <- dat[, c("id", "firstname", "lastname", "dob")]
+  
+  # create a table with keys for each visual field type
+  dat$vf_identifier <- paste(dat$tperimetry, dat$pattern, dat$locnum, dat$strategy, sep = ", ")
+  dat$vfID <- as.integer(factor(dat$vf_identifier, levels = unique(dat$vf_identifier), ordered = TRUE))
+  
+  vf_index <- dat$vfID
+  
+  resultList$vf_types <- unique(dat[, c("vfID", "tperimetry", "pattern", "locnum", "strategy")])
+  
+  # function to extract sensitivities for the different loci from one line
+  extractLocations <- function(tLine) {
+    
+    # extract number of locations
+    locnum <- as.integer(tLine[which(names(tLine) == "locnum")])
+    
+    # extract locations
+    startCol <- 44
+    endCol <- startCol + (locnum* 5) - 1
+    locs <- as.numeric(unlist(tLine[startCol:endCol])) / 10
+    
+    # create a matrix
+    locMatrix <-
+      data.frame(matrix(locs, locnum, 5, byrow = TRUE))
+    names(locMatrix) <- c("xod", "yod", "sens1", "sens2", "norm")
+    
+    # switch locmap for left eyes?
+    if (tLine[which(names(tLine) == "eye")] == "OS")
+      locMatrix$xod <- -locMatrix$xod
+    
+    # order locmap
+    locMatrix <- locMatrix[order(locMatrix$xod, locMatrix$yod), ]
+    
+    # give each location a key
+    locMatrix$loc_ID <- 1:nrow(locMatrix)
+    
+    return(locMatrix)
+  }
+  
+  # apply the extractLocations function on each row
+  locations <- apply(dat, 1, extractLocations)
+  
+  # extract the locmaps
+  locmaps <- lapply(locations, 
+                    function (mt) { rv <- mt[, c("loc_ID", "xod", "yod")]; rownames(rv) <- NULL; return(rv) }
+  )
+  locmaps <- unique(locmaps)
+  
+  resultList$locmaps <- locmaps
+  
+  # extract the sensitivities
+  sens <- lapply(locations, 
+                 function (mt) { rv <- mt$sens1; names(rv) <- paste0("l", mt$loc_ID); return(rv) }
+  )
+  
+  resultList$sensitivities <- 
+    lapply(unique(vf_index), 
+           function(vf_type) { vf_list <- sens[vf_index == vf_type]; rv <- t(sapply(vf_list, c)); return(rv)}
+    )
+  
+  # extract the defects
+  defects <- lapply(locations, 
+                    function (mt) { rv <- mt$sens1 - mt$norm; names(rv) <- paste0("l", mt$loc_ID); return(rv) }
+  )
+  
+  resultList$defects <- 
+    lapply(unique(vf_index), 
+           function(vf_type) { vf_list <- defects[vf_index == vf_type]; rv <- t(sapply(vf_list, c)); return(rv)}
+    )
+  
+  # extract other properties
+  resultList$fields <- dat[, c("id", "eye", "date", "time", "age", "type", "fpr", "fnr", "fl", "vfID")]
+  
+  # add some functions for convering these data to standard tables of the visual fields package
+  resultList$create_locmap <- 
+    function(vf_id) {
+      lmap <- list()
+      vft <- resultList$vf_types[resultList$vf_types$vfID == vf_id, c("pattern", "locnum")]
+      lmap$name <- paste(vft$pattern, vft$locnum)
+      lmap$desc <- "This locmap was automatically created from the csv exported by Eyesuite. NB: The locations are not numbered according to the standard!"
+      lmap$coord <- resultList$locmap[[vf_id]][, c("xod", "yod")]
+      names(lmap$coord) <- c("x", "y")
+      return(lmap)
+    }
+  
+  resultList$get_sensitivities <-
+    function(vf_id) {
+      rv <- cbind(resultList$fields[resultList$fields$vfID == vf_id, ], resultList$sensitivities[[vf_id]])
+      # rv$date <- as.Date(rv$date)
+    }
+  
+  resultList$get_defects <-
+    function(vf_id) {
+      rv <- cbind(resultList$fields[resultList$fields$vfID == vf_id, ], resultList$defects[[vf_id]])
+      # rv$date <- as.Date(rv$date)
+    }
+  
+  resultList$patients <- unique(resultList$patients)
+  
+  return(resultList)
 }
 
 #' @rdname vfloaders

@@ -5,7 +5,9 @@
 \alias{normvals}
 \title{List of normative values that can be used for statistical analysis and
 visualization}
-\format{See section \code{Structure of normative values} in \code{\link{setnv}}}
+\format{
+See section \code{Structure of normative values} in \code{\link{setnv}}
+}
 \usage{
 normvals
 }

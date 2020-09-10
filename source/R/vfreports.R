@@ -1,18 +1,19 @@
 #' @rdname sfa
-#' @title Single Field Analysis
-#' @description Performs a single field analysis, including TD and PD
-#' values and probability maps and global indices and their p-values.
+#' @title Single Field Reporting
+#' @description Generates of one-page reports of single field analyses
 #' @details
 #' \itemize{
-#'   \item\code{vfsfa} saves a pdf with a visual field statistical report
-#'   \item\code{vfsfashiny} reports the results interactively with shiny
+#'   \item\code{vfsfa} saves a pdf with one-page reports of single field analyses
+#'   \item\code{vfsfashiny} generates interactive one-page reports of single field
+#'     analyses based on Shiny
 #' }
 #' @param vf visual field data
-#' @param file The pdf file name where to save the single visual field
-#' analysis report
+#' @param file The pdf file name where to save the one-page reports of single field analysis
 #' @param ... other graphical arguments
 #' @export
 vfsfa <- function(vf, file, ...) {
+  # always sort by ID, eye, date, and time
+  vf <- vfsort(vf)
   pdf(file, width = 8.27, height = 11.69)
   par(mar = c(0, 0, 0, 0), ...)
   for(i in 1:nrow(vf)) {
@@ -38,7 +39,7 @@ vfsfa <- function(vf, file, ...) {
     screen(scrlist$pd)
     vfplot(vfiter, "pd", mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$col)
-    drawcolscalesfa(getgpar()$colmap$map$probs, getgpar()$colmap$map$cols, ...)
+    drawcolscalesfa(getgpar()$colmap$map$probs, getgpar()$colmap$map$cols, ps = 6, ...)
     par(ps = 10)
     screen(scrlist$foot)
     fillfoot()
@@ -49,14 +50,14 @@ vfsfa <- function(vf, file, ...) {
 
 #' @rdname spa
 #' @title Series Progession Analysis
-#' @description Performs a series progression analysis, including PoPLR
-#' (see reference) and the global indices Mean Sensitivity, Mean Deviation,
-#' and General Height and reports the results graphically either
-#' interactively in a browser (with Shiny) or in a pdf file.
-#' @param vf A \code{VisualField} object
-#' @param file The pdf file name where to save the single visual field
-#' analysis report. If `\code{FALSE}` (default) it shows an interactive
-#' report with Shiny
+#' @description Generation of one-page reports of series progression analyses
+#' \itemize{
+#'   \item\code{vfspa} saves a pdf with one-page reports of series progression analyses
+#'   \item\code{vfspashiny} generates interactive one-page reports of series progression
+#'     analyses based on Shiny
+#' }
+#' @param vf visual field data
+#' @param file The pdf file name where to save the one-page reports of single field analysis
 #' @param type Type of data to use. It can be `\code{s}`, `\code{td}`, or
 #' `\code{pd}`.
 #' @param nperm Number of permutations. Default is 7!
@@ -77,6 +78,8 @@ vfsfa <- function(vf, file, ...) {
 #' @export
 vfspa <- function(vf, file, type = "td", nperm = factorial(7),
                   trunc = 1, testSlope = 0, ...) {
+  # sort
+  vf <- vfsort(vf)
   # run regression analyses
   res <- runregressions(vf, type, nperm, trunc, testSlope)
   pdf(file, width = 8.27, height = 11.69)
@@ -113,7 +116,7 @@ vfspa <- function(vf, file, type = "td", nperm = factorial(7),
     screen(scrlist$sl)
     vfplotplr(vfeye, type, mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$col)
-    drawcolscalespa(getgpar()$progcolmap$b$map$probs, getgpar()$progcolmap$b$map$cols, ...)
+    drawcolscalespa(getgpar()$progcolmap$b$map$probs, getgpar()$progcolmap$b$map$cols, ps = 6, ...)
     screen(scrlist$spark)
     vfplotsparklines(vfeye, type, mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$poplrb)
@@ -134,8 +137,185 @@ vfspa <- function(vf, file, type = "td", nperm = factorial(7),
   invisible(dev.off())
 }
 
+#' @rdname sfa
+#' @export
+vfsfashiny <- function(vf, ...) {
+  # sort
+  vf <- vfsort(vf)
+  # user interface
+  ui <- fluidPage(
+    useShinyjs(),
+    titlePanel("Single Field Analysis"),
+    sidebarLayout(
+      sidebarPanel(
+        column(7, selectInput("id",  label = "Patient ID", choices = unique(vf$id), selected = vf$id[1])),
+        column(5, selectInput("eye", label = "Eye", choices = NULL)),
+        div(dataTableOutput("vfdata"), style = "font-size: 85%")
+      ),
+      mainPanel(
+        column(12, align = "center", htmlOutput("info")),
+        br(),
+        tabsetPanel(type = "pills",
+          tabPanel("Sensitivity",       plotOutput("s"),  plotOutput("dum", height = "60px")),
+          tabPanel("Total Deviation",   plotOutput("td"), plotOutput("ctd", height = "60px")),
+          tabPanel("Pattern Deviation", plotOutput("pd"), plotOutput("cpd", height = "60px"))
+        ),
+        column(6, align = "center", actionButton("prevbtn", icon = icon("arrow-left"), "")),
+        column(6, align = "center", actionButton("nextbtn", icon = icon("arrow-right"), ""))
+      )
+    )
+  )
+  # server
+  server <- function(input, output, session) {
+    vfdata <- vffilter(vf, !!sym("id") == vf$id[1] & !!sym("eye") == vf$eye[1])
+    vfsel  <- reactiveVal(vfselect(vfdata, 1))
+    ####################
+    # EVENTS
+    ####################
+    # select Patient ID, update eye options
+    # if a new Patient ID is selected
+    observeEvent(input$id, {
+      vfdata <<- vffilter(vf, !!sym("id") == input$id) # get data from subject
+      eyes <- sort(unique(vfdata$eye)) # get eyes for this subject
+      vfdata <<- vffilter(vfdata, !!sym("eye") == eyes[1]) # refine selection get data only for first eye
+      vfsel(vfselect(vfdata, 1)) # choose first record
+      output$vfdata <- rendervftable(vfdata, 1)
+      updateSelectInput(session, "eye", choices = eyes)
+    })
+    # if a different eye is selected
+    observeEvent(input$eye, {
+      vfdata <<- vffilter(vf, !!sym("id") == input$id & !!sym("eye") == input$eye) # get data for the selected eye
+      vfsel(vfselect(vfdata, 1)) # choose first record
+      output$vfdata <- rendervftable(vfdata, 1)
+    }, ignoreInit = TRUE)
+    # update data from selected table row
+    observeEvent(input$vfdata_rows_selected, vfsel(vfselect(vfdata, input$vfdata_rows_selected)), ignoreInit = TRUE)
+    # previous record
+    observeEvent(input$prevbtn, {
+      selected <- input$vfdata_rows_selected
+      if(selected > 1) selected <- selected - 1
+      vfsel(vfselect(vfdata, selected))
+      output$vfdata <- rendervftable(vfdata, selected)
+    })
+    # next record
+    observeEvent(input$nextbtn, {
+      selected <- input$vfdata_rows_selected
+      if(selected < nrow(vfdata)) selected <- selected + 1
+      vfsel(vfselect(vfdata, selected))
+      output$vfdata <- rendervftable(vfdata, selected)
+    })
+    ####################
+    # OUTPUT
+    ####################
+    # show patient's info and global indices
+    output$info <- renderText(fillinfosfashiny(vfsel()))
+    # show the sensitivity plots (if that tab is selected in the UI)
+    output$s    <- renderPlot(vfplot(vfsel(), type = "s"))
+    # show the total-deviation maps (if that tab is selected in the UI)
+    output$td   <- renderPlot(vfplot(vfsel(), type = "td"))
+    # show the pattern-deviation maps (if that tab is selected in the UI)
+    output$pd   <- renderPlot(vfplot(vfsel(), type = "pd"))
+    # show col scales for TD or PD probability maps
+    output$ctd  <- renderPlot(drawcolscalesfa(getgpar()$colmap$map$probs, getgpar()$colmap$map$cols, ps = 8, ...)) # col scale for TD probability maps
+    output$cpd  <- renderPlot(drawcolscalesfa(getgpar()$colmap$map$probs, getgpar()$colmap$map$cols, ps = 8, ...)) # col scale for TD probability maps. Redundant but necessary
+    output$dum  <- renderPlot({})         # for senstivity values, we need not plot col scale, but need this for consistent formatting
+  }
+  shinyApp(ui, server)
+}
+
+#' @rdname spa
+#' @references
+#' N. O'Leary, B. C. Chauhan, and P. H. Artes. \emph{Visual field progression in
+#' glaucoma: estimating the overall significance of deterioration with permutation
+#' analyses of pointwise linear regression (PoPLR)}. Investigative Ophthalmology
+#' and Visual Science, 53, 2012
+#' @export
+vfspashiny <- function(vf, type = "td", nperm = factorial(7),
+                       trunc = 1, testSlope = 0, ...) {
+  vf <- vfsort(vf)
+  # get eyes analyzed 
+  vfeye <- unique(data.frame(id = vf$id, eye = vf$eye, stringsAsFactors = FALSE))
+  # run regression analyses
+  res <- runregressions(vf, type, nperm, trunc, testSlope)
+
+  ui <- fluidPage(
+    titlePanel("Series Progression Analysis"),
+    sidebarLayout(
+      sidebarPanel(
+        column(7, selectInput("id",  label = "Patient ID", choices = unique(vfeye$id), selected = unique(vfeye$id)[1])),
+        column(5, selectInput("eye", label = "Eye", choices = NULL)),
+        br(), br(), br()
+      ),
+      mainPanel(
+        column(12, align = "center", htmlOutput("info")),
+        tabsetPanel(type = "pills",
+          tabPanel("Baseline",   plotOutput("bas"), plotOutput("cbas", height = "60px")),
+          tabPanel("PLR",        plotOutput("plr"), plotOutput("cplr", height = "60px")),
+          tabPanel("Sparklines", plotOutput("skl")),
+          tabPanel("PoPLR",
+            column(width = 12, align = "center",
+              plotOutput("poplrr", width = "250px", height = "250px"),
+              plotOutput("poplrl", width = "250px", height = "250px")
+            )
+          ),
+          tabPanel("Global trends",
+            column(width = 4, plotOutput("ms", height = "250px")),
+            column(width = 4, plotOutput("md", height = "250px")),
+            column(width = 4, plotOutput("gh", height = "250px"))
+          )
+        )
+      )
+    )
+  )
+
+  server <- function(input, output, session) {
+    ressel   <- reactiveVal(res[[1]]) # select first subject/eye to show results
+    vfseries <- reactiveVal(vf[vf$id == res[[1]]$id & vf$eye == res[[1]]$eye,])
+    ####################
+    # EVENTS
+    ####################
+    # select Patient ID, update eye options
+    # if a new Patient ID is selected
+    # update available eyes for analysis
+    observeEvent(input$id, {
+      ressel(res[[which(vfeye$id == input$id & vfeye$eye == vfeye$eye[vfeye$id == input$id][1])]])
+      updateSelectInput(session, "eye", choices = vfeye$eye[vfeye$id == input$id])
+    })
+    # update selected eye for which to show the analysis
+    observeEvent(input$eye, ressel(res[[which(vfeye$id == input$id & vfeye$eye == input$eye)]]), ignoreInit = TRUE)
+    # update vfseries
+    observeEvent(ressel(), vfseries(vf[vf$id == ressel()$id & vf$eye == ressel()$eye,]))
+    ####################
+    # OUTPUT
+    ####################
+    # show patient's info and analysis
+    output$info <- renderText(fillinfospashiny(ressel()))
+    # show the baseline plot
+    output$bas  <- renderPlot({
+      vfint <- vfselect(vfseries(), sel = 1) # get first
+      vfint[,getvfcols()] <- plr(vfseries(), type = "s")$int
+      vfplot(vfint, type, mar = c(0, 0, 0, 0))
+    })
+    # show the pointwise linear regression plot
+    output$plr  <- renderPlot(vfplotplr(vfseries(), type, mar = c(0, 0, 0, 0)))
+    # show the sparklines plot
+    output$skl  <- renderPlot(vfplotsparklines(vfseries(), type, mar = c(0, 0, 0, 0)))
+    # show the probability scales
+    output$cbas <- renderPlot(drawcolscalesfa(getgpar()$colmap$map$probs, getgpar()$colmap$map$cols, ps = 8, ...))
+    output$cplr <- renderPlot(drawcolscalesfa(getgpar()$progcolmap$b$map$probs, getgpar()$progcolmap$b$map$cols, ps = 8, ...))
+    # PoPLR histograms
+    output$poplrl <- renderPlot(drawhist(ressel()$poplr, "LT"))
+    output$poplrr <- renderPlot(drawhist(ressel()$poplr, "GT"))
+    # global indices progression analysis
+    output$ms <- renderPlot(drawgi(ressel()$ms, "Mean Sensitivity"))
+    output$md <- renderPlot(drawgi(ressel()$md, "Mean Deviation"))
+    output$gh <- renderPlot(drawgi(ressel()$gh, "General Height"))
+  }
+  shinyApp(ui, server)
+}
+
 ########################################################
-# internal helper functions for both interactive and pdf
+# internal helper functions for pdf and shiny reports
 ########################################################
 mountlayoutsfa <- function() {
   # all the boxes are defined in mm divided by the width and height
@@ -331,7 +511,7 @@ drawcolscalesfa <- function(probs, cols, ...) {
   }
   x <- xini + 1:length(probs)
   y <- rep(0, length(probs))
-  par(mar = c(0, 0, 0, 0), ps = 6, ...)
+  par(mar = c(0, 0, 0, 0), ...)
   plot(x, y, typ = "n", ann = FALSE, axes = FALSE,
        xlim = c(1, 25), ylim = c(-0.25, 0.25), asp = 1)
   for(i in 1:length(x)) polygon(pol[[i]], border = NA, col = cols[i])
@@ -361,7 +541,7 @@ drawcolscalespa <- function(probs, cols, ...) {
   }
   x <- xini + 1:length(probs)
   y <- rep(0, length(probs))
-  par(mar = c(0, 0, 0, 0), ps = 6, ...)
+  par(mar = c(0, 0, 0, 0), ...)
   plot(x, y, typ = "n", ann = FALSE, axes = FALSE,
        xlim = c(1, 17), ylim = c(-0.25, 0.25), asp = 1)
   for(i in 1:length(x)) polygon(pol[[i]], border = NA, col = cols[i])
@@ -380,7 +560,7 @@ fillfoot <- function() {
 
 #' @noRd
 isnotempty <- function(field) {
-  if(is.null(field) || length(field) != 1 || field == "") return(FALSE)
+  if(is.null(field) || is.na(field) || length(field) != 1 || field == "") return(FALSE)
   return(TRUE)
 }
 
@@ -405,7 +585,7 @@ runregressions <- function(vf, type, nperm, trunc, testSlope) {
                 ageStart = vfiter$age[1], ageEnd  = vfiter$age[res$nvisits],
                 poplr = list(int = res$int, sl = res$sl, pval = res$pval,
                              csl = res$csl, cslp = res$cslp, cslall = res$cstats$cslall,
-                             csr = res$csr, csrp = res$cslp, csrall = res$cstats$csrall),
+                             csr = res$csr, csrp = res$csrp, csrall = res$cstats$csrall),
                 ms = ms, md = md, gh = gh))
   })
   close(pb)
@@ -442,7 +622,8 @@ drawgi <- function(res, ylab, ...) {
 
 #' @noRd
 drawhist <- function(res, alternative, ...) {
-  maxsp <- 3
+  maxsp <- 5
+  sep   <- 1 / 10 # separation between bins in a tenth so we have 100 bins
   if(alternative == "LT") {
     coltxt  <- "#FF0000"
     colhist <- "#FF000080"
@@ -454,26 +635,114 @@ drawhist <- function(res, alternative, ...) {
     colhist <- "#00800040"
     s       <- res$csr
     pval    <- res$csrp
-    sp      <- res$cslall
+    sp      <- res$csrall
   }
-  sep  <- 3 / 100
-  sp[sp > maxsp] <- maxsp # cap to a maximum S/n value of 6 (p-value with 6 decimal places)
+  s  <- s  / length(res$pval) # average by the number of locations here
+  sp <- sp / length(res$pval)
+  sp[sp > maxsp] <- maxsp
   if(s > maxsp) s <- maxsp
   breaks <- seq(0, maxsp, by = sep)
   ymax <- max(hist(sp, breaks = breaks, plot = FALSE)$density)
   xlim <- c(0, maxsp)
-  ylim <- c(0, ymax)
+  ylim <- c(0, 1.1 * ymax)
   par(plt = c(0, 1, 0.4, 1), mgp = c(0.6, 0.1, 0), ...)
   hist(sp, breaks = breaks, freq = FALSE, main = "", xlim = xlim, ylim = ylim,
        xlab = "", ylab = "", lty = 0, col = colhist, axes = FALSE, ann = FALSE)
+  axis(1, at = 0:maxsp, tcl = -0.2, lwd = 0.5, lwd.ticks = 0.5)
+  title(xlab = "S / n")
   lines(c(s, s), 0.8 * c(0, ymax), col = coltxt)
   points(s, 0.8 * ymax, pch = 21, col = coltxt, bg = coltxt)
-  if(alternative == "LT") {
-    axis(1, at = 0:maxsp, tcl = -0.3, lwd = 0.5, lwd.ticks = 0.5)
-    title(xlab = "S / n", ...)
-    text(x = maxsp, y = ymax, label = "S (left)", adj = c(1, 1), font = 2, ...)
-  } else {
-    axis(1, at = 0:maxsp, labels = rep("", maxsp + 1), tcl = -0.3, lwd = 0.5, lwd.ticks = 0.5)
-    text(x = maxsp, y = ymax, label = "S (right)", adj = c(1, 1), font = 2, ...)
-  }
+  if(alternative == "LT") text(x = maxsp, y = ymax, label = "S (left)", adj = c(1, 1), font = 2, ...)
+  if(alternative == "GT") text(x = maxsp, y = ymax, label = "S (right)", adj = c(1, 1), font = 2, ...)
+}
+
+#' @noRd
+fillinfosfashiny <- function(vfsel) {
+  # fill information table
+  infoTab <- matrix("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", 4, 13) # leave large space between blocks
+  cssTab  <- matrix("", 4, 13)
+  infoTab[,1] <- c("<b>Patient ID:</b>", "<b>Eye:</b>", "<b>Date:</b>", "<b>Time:</b>")
+  infoTab[,2] <- "&nbsp;" # leave small space between columns
+  infoTab[,3] <- c(vfsel$id, vfsel$eye, format(vfsel$date), vfsel$time)
+  # global indices
+  infoTab[,5] <- c("<b>MS:</b>", "<b>MD:</b>", "<b>PSD:</b>", "<b>VFI:</b>")
+  infoTab[,6] <- "&nbsp;" # leave small space between columns
+  g    <- getgl(vfsel)
+  gp   <- getglp(g)
+  ms   <- paste(round(g$msens),     " dB")
+  md   <- paste(round(g$tmd),       " dB")
+  psd  <- paste(round(g$psd),       " dB")
+  vfi  <- paste(round(g$vfi),       "  %")
+  msp  <- paste0("(p < ", gp$msens, " %)")
+  mdp  <- paste0("(p < ", gp$tmd,   " %)")
+  psdp <- paste0("(p < ", gp$psd,   " %)")
+  vfip <- paste0("(p < ", gp$vfi,   " %)")
+  infoTab[,7] <- c(ms, md, psd, vfi)
+  infoTab[,8] <- "&nbsp;" # leave small space between columns
+  infoTab[,9] <- c(msp, mdp, psdp, vfip)
+  # check if text color needs to change (if p-value < 0.05)
+  cssTab[c(gp$msens, gp$tmd, gp$psd, gp$vfi) < 5, 7:9] <- "color: #fb0000; font-weight: 700;"
+  # false positive and negative rates and fixation losses
+  fpr <- paste(round(100 * vfsel$fpr), "%")
+  fnr <- paste(round(100 * vfsel$fnr), "%")
+  fl  <- paste(round(100 * vfsel$fl),  "%")
+  infoTab[,11] <- c("<b>Test duration:</b>", "<b>False positives:</b>", "<b>False negatives:</b>", "<b>Fixation losses:</b>")
+  infoTab[,12] <- "&nbsp;" # leave small space between columns
+  infoTab[,13] <- c(vfsel$duration, fpr, fnr, fl)
+  # check if text color needs to change (if FPR, FNR, FL are greater than 15%)
+  cssTab[c(0, vfsel$fpr, vfsel$fnr, vfsel$fl) > 0.15, 13] <- "color: #fb0000; font-weight: 700;"
+  return(htmlTable(infoTab, css.cell = cssTab,
+                   css.table = "margin-top: 0em; margin-bottom: 1em;",
+                   align = c("l", "c", "r", "c", "l", "c", "r", "c", "r", "c", "l", "c", "r"),
+                   cgroup = c("Patient information", "", "Global indices", "", "Reliability indices"),
+                   n.cgroup = c(3, 1, 5, 1, 3),
+                   col.rgroup = c("none", "#F7F7F7")))
+}
+
+#' @noRd
+rendervftable <- function(vfdata, selected)
+  renderDataTable(vfdata[,c("date", "time")], server = FALSE,
+                  rownames = FALSE, colnames = c("Test date", "Test time"),
+                  selection = list(mode = "single", selected = selected),
+                  options = list(paging = FALSE, searching = FALSE))
+
+#' @noRd
+fillinfospashiny <- function(selres) {
+  # fill information table
+  infoTab <- matrix("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", 4, 15) # leave large space between blocks
+  cssTab  <- matrix("", 4, 15)
+  infoTab[,1] <- c("<b>Patient ID:</b>", "<b>Eye:</b>", "<b>From:</b>", "<b>To:</b>")
+  infoTab[,2] <- "&nbsp;" # leave small space between columns
+  infoTab[,3] <- c(selres$id, selres$eye, format(selres$dateStart), format(selres$dateEnd))
+  # progression global indices
+  infoTab[,5] <- c("<b>MS:</b>", "<b>MD:</b>", "<b>PSD:</b>", "")
+  infoTab[,6] <- "&nbsp;" # leave small space between columns
+  ms  <- paste(round(selres$ms$sl, 2), "dB / y")
+  md  <- paste(round(selres$md$sl, 2), "dB / y")
+  gh  <- paste(round(selres$gh$sl, 2), "dB / y")
+  msp <- paste0("(p < ", round(selres$ms$pval), " %)")
+  mdp <- paste0("(p < ", round(selres$md$pval), " %)")
+  ghp <- paste0("(p < ", round(selres$gh$pval), " %)")
+  infoTab[,7] <- c(ms, md, gh, "")
+  infoTab[,8] <- "&nbsp;" # leave small space between columns
+  infoTab[,9] <- c(msp, mdp, ghp, "")
+  cssTab[c(selres$ms$pval, selres$md$pval, selres$gh$pval, 100) < 5, 7:9] <- "color: #fb0000; font-weight: 700;"
+  # progression PoPLR
+  csl  <- round(selres$poplr$csl)
+  csr  <- round(selres$poplr$csr)
+  cslp <- paste0("(p < ", round(selres$poplr$cslp), " %)")
+  csrp <- paste0("(p < ", round(selres$poplr$csrp), " %)")
+  infoTab[,11] <- c("<b>S left:</b>", "<b>S right:</b>", "", "")
+  infoTab[,12] <- "&nbsp;" # leave small space between columns
+  infoTab[,13] <- c(csl, csr, "", "")
+  infoTab[,14] <- "&nbsp;" # leave small space between columns
+  infoTab[,15] <- c(cslp, csrp, "", "")
+  cssTab[c(selres$poplr$cslp, 100, 100, 100) < 5, 12:15] <- "color: #fb0000; font-weight: 700;"
+  cssTab[c(100, selres$poplr$csrp, 100, 100) < 5, 12:15] <- "color: #228b22; font-weight: 700;"
+  return(htmlTable(infoTab, css.cell = cssTab,
+                   css.table = "margin-top: 0em; margin-bottom: 1em;",
+                   align = c("l", "c", "r", "c", "l", "c", "r", "c", "r", "c", "l", "c", "r", "c", "r"),
+                   cgroup = c("Patient information", "", "Global slopes", "", "PoPLR"),
+                   n.cgroup = c(3, 1, 5, 1, 5),
+                   col.rgroup = c("none", "#F7F7F7")))
 }
