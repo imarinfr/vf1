@@ -1,20 +1,5 @@
-<<<<<<< HEAD
-
-source/R/vfctrl
-source/R/vftest
-source/R/crit1.csv
-source/R/vf_crit
-source/R/vf_data.csv
-source/.RData
-source/.Rhistory
-source/R/.RData
-source/R/.Rhistory
-source/R/test_data_all.csv
-source/R/environment_data.RData
-=======
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
 *.Rproj
->>>>>>> master
