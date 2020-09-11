@@ -5,7 +5,7 @@
 \alias{gpars}
 \title{List of graphical parameters}
 \format{
-See section \code{Structure of graphical parameters} in \code{\link{setgpar}}
+See section \code{Structure of graphical parameters} in \code{\link{vfplot}}
 }
 \usage{
 gpars
