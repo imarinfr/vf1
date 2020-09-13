@@ -233,6 +233,298 @@ lim <- function( data, indices, l, k )
   return( as.double( confint( data[indices], level=l, method="quantile" )[k] ) )
 }
 
+# This testing function is almost identical to vfclusteranalysis, but it has extra lines to import data, and modification to test a custom vf set
+vftest <- function( vf = vftestHfx24d2, criteria = "all", vf.ctrl = vfctrSunyiu24d2 )
+{
+  # first, run these line by line to import data using Ctrl+Enter
+  #-----------------------------
+  library(visualFields)
+  #library(simpleboot)
+  library(boot)
+  library(mosaic)
+  library(BlandAltmanLeh)
+  library(vcd)
+  library(reshape2)
+  library(ggplot2)
+  library(tidyverse)
+  library(hexbin)
+  library(gridExtra)
+  
+  vfctrHfx24d2 = read.csv("vfctrHfx24d2.csv")
+  vfstatpacHfx24d2 = read.csv("vfstatpacHfx24d2.csv")
+  vftestHfx24d2 = read.csv("vftestHfx24d2.csv")
+  
+  vfctrHfx24d2$id = 1:nrow(vfctrHfx24d2)
+  vftestHfx24d2$id = 1:nrow(vftestHfx24d2)
+  vfctrHfx24d2$date  = as.Date(vfctrHfx24d2$date)
+  vftestHfx24d2$date = as.Date(vftestHfx24d2$date)
+  vfstatpacHfx24d2 = vfstatpacHfx24d2[-which(is.na(vfstatpacHfx24d2$age)),]
+  vfstatpacHfx24d2 = vfstatpacHfx24d2[-which(vfstatpacHfx24d2$ght=="-"),]
+  
+  assign("vfctrHfx24d2", vfctrHfx24d2, envir=globalenv())
+  assign("vfstatpacHfx24d2", vfstatpacHfx24d2, envir=globalenv())
+  assign("vftestHfx24d2", vftestHfx24d2, envir=globalenv())
+  #------------------------------
+  
+  r = vfcriteria(vf, criteria, vf.ctrl)
+  
+  assign("rv", r, envir=globalenv())
+  
+  # analyze agreeement with statpac values
+  analysis(r2 = r)
+
+}
+
+# analysis function that provides contigency tables and agreement graphs for agreement of criteria between 2 environments
+# r1 and r2 input parameters are the results of vfclusteranalysis()
+analysis = function(r1 = vfstatpacHfx24d2, r2 = rv)
+{
+  #equalize rows
+  r1 = r1[1:nrow(r2),]
+  
+  #ght results contigency table
+  ght_results = c("Outside normal limits","Borderline","Within normal limits","Abnormally high sensitivity","Borderline and general reduction in sensitivity","General reduction in sensitivity")
+  ght_analysis <- data.frame( array( 0, c( length(ght_results), length(ght_results) ) ) )
+  colnames( ght_analysis ) = ght_results
+  rownames( ght_analysis ) = ght_results
+  
+  for( i in 1:nrow(r2) )
+  {
+    #print(i)
+    row = r2[i,"ght"]
+    col = as.character(r1[i,"ght"])
+    ght_analysis[ row,col ] = ght_analysis[ row,col ] + 1
+  }
+  print(ght_analysis)
+  
+  #2x2 contigency tables for agreement between each criteria
+  ct2x2 = list(colnames(r2))
+  for(criteria in colnames(r2))
+  {
+    if(criteria == "ght")
+    {
+      ct2x2[[criteria]] = cbind(c(length(which(r1[,criteria]=="Outside normal limits" & r2[,criteria]=="Outside normal limits")),length(which(r1[,criteria]!="Outside normal limits" & r2[,criteria]=="Outside normal limits"))),
+                              c(length(which(r1[,criteria]=="Outside normal limits" & r2[,criteria]!="Outside normal limits")),length(which(r1[,criteria]!="Outside normal limits" & r2[,criteria]!="Outside normal limits"))))
+    }
+    else
+    {
+      ct2x2[[criteria]] = cbind(c(length(which(r1[,criteria]==TRUE & r2[,criteria]==TRUE)),length(which(r1[,criteria]==FALSE & r2[,criteria]==TRUE))),
+                              c(length(which(r1[,criteria]==FALSE & r2[,criteria]==TRUE)),length(which(r1[,criteria]==FALSE & r2[,criteria]==FALSE))))
+    }
+    
+  }
+  print(ct2x2)
+  
+  #print kappa values, and upper and lower 95% CI bounds
+  kappa_values = c("kappa", "upper.CI", "lower.CI")
+  agreement_analysis = data.frame( array( 0, c( length(kappa_values), length(colnames(r2)) ) ) )
+  colnames( agreement_analysis ) = colnames(r2)
+  rownames( agreement_analysis ) = kappa_values
+  for(criteria in colnames(r2))
+  {
+    k = Kappa(ct2x2[[criteria]])
+    agreement_analysis[,criteria] = c( k$Unweighted["value"], confint(k)["Unweighted","upr"], confint(k)["Unweighted","lwr"])
+  }
+  #print(agreement_analysis)
+  
+  return(agreement_analysis)
+}
+  
+# print kappa histogram
+printClusteredHistogram = function()
+{
+  k1 = t(analysis(r2=v1$results))
+  k2 = t(analysis(r2=v2$results))
+  k3 = t(analysis(r1=v1$results,r2=v2$results))
+  
+  k_vals = data.frame(colnames(v1$results),k1[,"kappa"],k2[,"kappa"],k3[,"kappa"])
+  colnames(k_vals) = c("criteria","STATPAC vs vF-SUNYIU", "STATPAC vs vF-Halifax", "vF-SUNYIU vs vF-Halifax")
+  k_vals = within(k_vals,  criteria <- factor(criteria, levels=criteria))
+
+  # melt
+  melted = melt(k_vals, variable.name = "comparison", value.name = "kappa")
+  # round hit rates to 2 sig figs
+  melted[,"kappa"] = round(melted[,], digits=2)
+  # add CI columns
+  melted = cbind(melted,
+                    lower.CI=c(k1[,"lower.CI"], k2[,"lower.CI"], k3[,"lower.CI"]),
+                    upper.CI=c(k1[,"upper.CI"], k2[,"upper.CI"], k3[,"upper.CI"]))
+  print(melted)
+  
+  ggplot(melted, aes(x=criteria, y=kappa, fill=comparison)) +
+    geom_linerange(position=position_dodge(0.5), aes(ymin=lower.CI, ymax=upper.CI), size=0.8) +
+    geom_point(position = position_dodge(0.5), stat = "identity", aes(fill = comparison), size = 5, shape = 21, colour = "black", size = 5, stroke = 1.3) +
+    #scale_fill_manual(values = c(GHT = "#bbbcbe", FOST = "#ffffb1", HAP2 = "#ffb1b1", UKGTS = "#b1e6fa", LOGTS = "white")) +
+    #geom_text(aes(label = Repeat.Error.Rate, group = criterion), size=6, hjust=0.5, vjust=3, position=position_dodge(0.9)) +
+    theme_bw(base_size = 22) +
+    scale_y_continuous(breaks=seq(0,1,0.2), limits=c(0,1))
+    #theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+}
+  
+#graphical agreement between statpac- and visualfields-generated values in the Halifax test dataset
+printBlandAltman = function()
+{
+  td_1 = td_2 = td_3 = pd_1 = pd_2 = pd_3 = vector("numeric",0)
+  
+  for(i in 1:nrow(vftestHfx24d2))
+  {
+    td_1 = c(td_1, as.numeric(vfstatpacHfx24d2[i,which( colnames( vfstatpacHfx24d2 ) == "td.1") : which( colnames( vfstatpacHfx24d2 ) == "td.54" )]))
+    pd_1 = c(pd_1, as.numeric(vfstatpacHfx24d2[i,which( colnames( vfstatpacHfx24d2 ) == "pd.1") : which( colnames( vfstatpacHfx24d2 ) == "pd.54" )]))
+  }
+  
+  setnv(nvgenerate(vfctrSunyiu24d2))
+  td2 = gettd(vftestHfx24d2)
+  pd2 = getpd(td2)
+  md_2 = getgl( vftestHfx24d2 )[,"tmd"]
+  psd_2 = getgl( vftestHfx24d2 )[,"psd"]
+  vfi_2 = getgl( vftestHfx24d2 )[,"vfi"]
+  
+  range = which( colnames( td2 ) == "l1") : which( colnames( td2 ) == "l54" )
+  for(i in 1:nrow(vftestHfx24d2))
+  {
+    td_2 = c(td_2, as.double(td2[i,range]))
+    pd_2 = c(pd_2, as.double(pd2[i,range]))      
+  }
+  
+  setnv(nvgenerate(vfctrHfx24d2))
+  td3 = gettd(vftestHfx24d2)
+  pd3 = getpd(td3)  
+  md_3 = getgl( vftestHfx24d2 )[,"tmd"]
+  psd_3 = getgl( vftestHfx24d2 )[,"psd"]
+  vfi_3 = getgl( vftestHfx24d2 )[,"vfi"]
+  
+  for(i in 1:nrow(vftestHfx24d2))
+  {
+      td_3 = c(td_3, as.double(td3[i,range]))
+      pd_3 = c(pd_3, as.double(pd3[i,range]))      
+  }
+  
+  td1 <- bland.altman.stats(td_1,td_2)
+  td2 <- bland.altman.stats(td_1,td_3)
+  td3 <- bland.altman.stats(td_2,td_3)
+  td.itx <<- data.frame(comparison = factor(c("STATPAC vs vF-SUNYIU", "STATPAC vs vF-Halifax", "vF-SUNYIU vs vF-Halifax")), 
+                   mean = c(td1$mean.diffs, td2$mean.diffs, td3$mean.diffs),
+                   upper= c(td1$upper.limit, td2$upper.limit, td3$upper.limit),
+                   lower= c(td1$lower.limit, td2$lower.limit, td3$lower.limit))
+  
+  td <<- rbind(data.frame(means=td1$means,diffs=td1$diffs,comparison="STATPAC vs vF-SUNYIU"),
+             data.frame(means=td2$means,diffs=td2$diffs,comparison="STATPAC vs vF-Halifax"),
+             data.frame(means=td3$means,diffs=td3$diffs,comparison="vF-SUNYIU vs vF-Halifax"))
+  
+  pd1 <- bland.altman.stats(pd_1,pd_2)
+  pd2 <- bland.altman.stats(pd_1,pd_3)
+  pd3 <- bland.altman.stats(pd_2,pd_3)
+  pd.itx <<- data.frame(comparison = factor(c("STATPAC vs vF-SUNYIU", "STATPAC vs vF-Halifax", "vF-SUNYIU vs vF-Halifax")), 
+                        mean = c(pd1$mean.diffs, pd2$mean.diffs, pd3$mean.diffs),
+                        upper= c(pd1$upper.limit, pd2$upper.limit, pd3$upper.limit),
+                        lower= c(pd1$lower.limit, pd2$lower.limit, pd3$lower.limit))
+  
+  pd <<- rbind(data.frame(means=pd1$means,diffs=pd1$diffs,comparison="STATPAC vs vF-SUNYIU"),
+               data.frame(means=pd2$means,diffs=pd2$diffs,comparison="STATPAC vs vF-Halifax"),
+               data.frame(means=pd3$means,diffs=pd3$diffs,comparison="vF-SUNYIU vs vF-Halifax"))
+  
+  md1 <- bland.altman.stats(vfstatpacHfx24d2$md.db,md_2)
+  md2 <- bland.altman.stats(vfstatpacHfx24d2$md.db,md_3)
+  md3 <- bland.altman.stats(md_2,md_3)
+  md.itx <<- data.frame(comparison = factor(c("STATPAC vs vF-SUNYIU", "STATPAC vs vF-Halifax", "vF-SUNYIU vs vF-Halifax")), 
+                        mean = c(md1$mean.diffs, md2$mean.diffs, md3$mean.diffs),
+                        upper= c(md1$upper.limit, md2$upper.limit, md3$upper.limit),
+                        lower= c(md1$lower.limit, md2$lower.limit, md3$lower.limit))
+  
+  md <<- rbind(data.frame(means=md1$means,diffs=md1$diffs,comparison="STATPAC vs vF-SUNYIU"),
+               data.frame(means=md2$means,diffs=md2$diffs,comparison="STATPAC vs vF-Halifax"),
+               data.frame(means=md3$means,diffs=md3$diffs,comparison="vF-SUNYIU vs vF-Halifax"))
+  
+  psd1 <- bland.altman.stats(vfstatpacHfx24d2$psd.db,psd_2)
+  psd2 <- bland.altman.stats(vfstatpacHfx24d2$psd.db,psd_3)
+  psd3 <- bland.altman.stats(psd_2,psd_3)
+  psd.itx <<- data.frame(comparison = factor(c("STATPAC vs vF-SUNYIU", "STATPAC vs vF-Halifax", "vF-SUNYIU vs vF-Halifax")), 
+                        mean = c(psd1$mean.diffs, psd2$mean.diffs, psd3$mean.diffs),
+                        upper= c(psd1$upper.limit, psd2$upper.limit, psd3$upper.limit),
+                        lower= c(psd1$lower.limit, psd2$lower.limit, psd3$lower.limit))
+  
+  psd <<- rbind(data.frame(means=psd1$means,diffs=psd1$diffs,comparison="STATPAC vs vF-SUNYIU"),
+               data.frame(means=psd2$means,diffs=psd2$diffs,comparison="STATPAC vs vF-Halifax"),
+               data.frame(means=psd3$means,diffs=psd3$diffs,comparison="vF-SUNYIU vs vF-Halifax"))
+  
+  vfi1 <- bland.altman.stats(100*vfstatpacHfx24d2$vfi,vfi_2)
+  vfi2 <- bland.altman.stats(100*vfstatpacHfx24d2$vfi,vfi_3)
+  vfi3 <- bland.altman.stats(vfi_2,vfi_3)
+  vfi.itx <<- data.frame(comparison = factor(c("STATPAC vs vF-SUNYIU", "STATPAC vs vF-Halifax", "vF-SUNYIU vs vF-Halifax")), 
+                        mean = c(vfi1$mean.diffs, vfi2$mean.diffs, vfi3$mean.diffs),
+                        upper= c(vfi1$upper.limit, vfi2$upper.limit, vfi3$upper.limit),
+                        lower= c(vfi1$lower.limit, vfi2$lower.limit, vfi3$lower.limit))
+  
+  vfi <<- rbind(data.frame(means=vfi1$means,diffs=vfi1$diffs,comparison="STATPAC vs vF-SUNYIU"),
+               data.frame(means=vfi2$means,diffs=vfi2$diffs,comparison="STATPAC vs vF-Halifax"),
+               data.frame(means=vfi3$means,diffs=vfi3$diffs,comparison="vF-SUNYIU vs vF-Halifax"))
+  
+  ggplot(td, aes(x=means,y=diffs)) +
+    xlab("mean of TD points") + ylab("difference of TD points = 1st - 2nd") +
+    geom_hline(data=td.itx, aes(yintercept=upper), color = "black", size=1) +
+    geom_hline(data=td.itx, aes(yintercept=mean), color = "black", size=1) +
+    geom_hline(data=td.itx, aes(yintercept=lower), color = "black", size=1) +
+    geom_point(shape=16, alpha = 0.05, color='#440154') +
+    scale_x_continuous(breaks=seq(-40,20,10), limits=c(-35,15)) + scale_y_continuous(breaks=seq(-3,3,1), limits=c(-3,3)) +
+    stat_density_2d(aes(fill = ..level..), geom = "polygon") +
+    scale_fill_viridis_c()+
+    geom_smooth(color="red") +
+    theme_bw(base_size = 14) +
+    facet_wrap(~ comparison)
+  
+  ggplot(pd, aes(x=means,y=diffs)) +
+    xlab("mean of PD points") + ylab("difference of PD points = 1st - 2nd") +  
+    geom_hline(data=pd.itx, aes(yintercept=upper), color = "black", size=1) +
+    geom_hline(data=pd.itx, aes(yintercept=mean), color = "black", size=1) +
+    geom_hline(data=pd.itx, aes(yintercept=lower), color = "black", size=1) +
+    geom_point(shape=16, alpha = 0.05, color='#440154') +
+    scale_x_continuous(breaks=seq(-40,20,10), limits=c(-35,15)) + scale_y_continuous(breaks=seq(-3,3,1), limits=c(-3,3)) +
+    stat_density_2d(aes(fill = ..level..), geom = "polygon") +
+    scale_fill_viridis_c()+
+    geom_smooth(color="red") +
+    theme_bw(base_size = 14) +
+    facet_wrap(~ comparison)
+  
+  ggplot(md, aes(x=means,y=diffs)) +
+    xlab("mean of MD") + ylab("difference of MD = 1st - 2nd") +
+    geom_hline(data=md.itx, aes(yintercept=upper), color = "black", size=1) +
+    geom_hline(data=md.itx, aes(yintercept=mean), color = "black", size=1) +
+    geom_hline(data=md.itx, aes(yintercept=lower), color = "black", size=1) +
+    geom_point(shape=16, alpha = 0.3, color='#440154') +
+    scale_x_continuous(limits=c(-31,5)) + scale_y_continuous(breaks=seq(-2,2,1), limits=c(-2,2)) +
+    stat_density_2d(aes(fill = ..level..), geom = "polygon") +
+    scale_fill_viridis_c()+
+    geom_smooth(color="red") +
+    theme_bw(base_size = 14) +
+    facet_wrap(~ comparison)
+  
+  ggplot(psd, aes(x=means,y=diffs)) +
+    xlab("mean of PSD") + ylab("difference of PSD = 1st - 2nd") +
+    geom_hline(data=psd.itx, aes(yintercept=upper), color = "black", size=1) +
+    geom_hline(data=psd.itx, aes(yintercept=mean), color = "black", size=1) +
+    geom_hline(data=psd.itx, aes(yintercept=lower), color = "black", size=1) +
+    geom_point(shape=16, alpha = 0.3, color='#440154') +
+    scale_x_continuous(breaks=seq(0,16,4)) + scale_y_continuous(breaks=seq(-2,2,1), limits=c(-2,2)) +
+    stat_density_2d(aes(fill = ..level..), geom = "polygon") +
+    scale_fill_viridis_c() +
+    geom_smooth(color="red") +
+    theme_bw(base_size = 14) +
+    facet_wrap(~ comparison)
+  
+  ggplot(vfi, aes(x=means,y=diffs)) +
+    xlab("mean of VFI") + ylab("difference of VFI = 1st - 2nd") +
+    geom_hline(data=vfi.itx, aes(yintercept=upper), color = "black", size=1) +
+    geom_hline(data=vfi.itx, aes(yintercept=mean), color = "black", size=1) +
+    geom_hline(data=vfi.itx, aes(yintercept=lower), color = "black", size=1) +
+    geom_point(shape=16, alpha = 0.3, color='#440154') +
+    scale_x_continuous(breaks=seq(0,100,20)) + scale_y_continuous(breaks=seq(-4,4,2), limits=c(-4,4)) +
+    stat_density_2d(aes(fill = ..level..), geom = "polygon") +
+    scale_fill_viridis_c() +
+    geom_smooth(color="red") +
+    theme_bw(base_size = 14) +
+    facet_wrap(~ comparison)
+  
+}
 
 #' @title Hoddap-Parrish-Anderson 2 criteria (HAP2)
 #' @description Analyse a VF for the presence of a VF defect based on the following criteria: GHT "Outside normal limits" OR cluster of 3 points P<0.05 level, one of which at P<0.01 on the pattern deviation plot OR PSD at P<5%
