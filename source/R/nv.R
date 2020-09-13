@@ -3,7 +3,6 @@
 #' @description Functions to generate and handle normative values. Check section
 #' \code{Structure of normative values} below for details about how to generate
 #' functioning normative values
-#' @details
 #' @section Structure of normative values:
 #' This is one of the most complex structures in visualFields. It is necessary
 #' to be able to run statistical analyses of visual fields obtained from

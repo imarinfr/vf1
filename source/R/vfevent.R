@@ -1,18 +1,34 @@
-#' @title VF criteria for detecting glaucoma damage
-#' @description Analyse a VF for the presence of a VF defect based on the following criteria: Hodapp-Parish-Anderson 2 (HAP2), United Kington Glaucoma Treatment Study (UKGTS), Glaucoma Hemifield Test (GHT), Foster, and/or Low-pressure Glaucoma Treatment Study (LoGTS)
+#' @rdname vfevent
+#' @title Event criteria for detection of glaucomatous damage
+#' @description Analyse a visual field for the presence of a defect based on
+#'  the following criteria: Hodapp-Parish-Anderson 2 (HAP2), United Kington
+#'  Glaucoma Treatment Study (UKGTS), Glaucoma Hemifield Test (GHT), Foster,
+#'  and/or Low-pressure Glaucoma Treatment Study (LoGTS)
+#'  
+#'  All the visual field defect criteria can be run individually with the
+#'  following functions: (HERMAN: this is suggested text. Change at will)
+#' \itemize{
+#'   \item\code{ght} HERMAN: GIVE DETAILS
+#'   \item\code{hap2} HERMAN: GIVE DETAILS
+#'   \item\code{ukgts} HERMAN: GIVE DETAILS
+#'   \item\code{foster} HERMAN: GIVE DETAILS
+#'   \item\code{logts} HERMAN: GIVE DETAILS
+#' }
 #' @param vf Visual fields to be analyzed as a standard vfobject
-#' @param criteria select to use all criteria (default), or a single criteria: hap2, ukgts, ght, foster, or logts
-#' @param calc_lims weather to calculate the limits of normality for Glaucoma Hemifield Test (GHT); limits are saved in a list in the global environment 
-#' @return result Whether VF analysis resulted in a detection of a VF defect
+#' @param criteria select to use all criteria (default), or a single
+#'  criteria: hap2, ukgts, ght, foster, or logts
+#' @param vf.ctrl control data (HERMAN: DESCRIBE IT. I WOULD CHANGE THE NAME
+#'   OF THIS PARAMETER TO vfctr)
+#' @examples
+#' # (HERMAN: you need to add some workable examples here of all the
+#' # functions. Check file vf.R or vfplot.R for examples on how)
 #' @export
-vfcriteria <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2)
-{
-  if( !require(boot) || !require(mosaic) )
-  {
-    install.packages( "boot", "mosaic" )
-    library( boot,mosaic )
-  }
-  
+#' @return whether analysis resulted in a detection of a defect. For
+#' \code{vfcriteria} with the
+#'  different criteria selected with \code{criteria}
+# (HERMAN: I would suggest changing the name of the function to vfdefect
+#  as it is more suggestive)
+vfcriteria <- function(vf , criteria = "all", vf.ctrl = visualFields::vfctrSunyiu24d2) {
   if( nrow( vf ) < 1 )
     stop( "vf is empty" )
   if( nrow( vf.ctrl ) < 1 )
@@ -124,7 +140,7 @@ vfcriteria <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2)
         else if( pdp.ctrl[v,i] > 1 )
           scores[i] <- 5
         else
-          scores[i] <- 10 * abs( pd.ctrl[v,i] / normvals$sunyiu_24d2$luts$pd["1%",i] )  
+          scores[i] <- 10 * abs( pd.ctrl[v,i] / getnv()$luts$pd["1%",i] )  
       }
     }
     for( sector in 1:GHT_SECTORS_NUM )
@@ -222,27 +238,13 @@ vfcriteria <- function( vf , criteria = "all", vf.ctrl = vfctrSunyiu24d2)
   return( list( "ght.limits" = ght.lims, "results" = result) )
 }
 
-#' @title Limit
-#' @description Compute a confidence limit by calcualting the confidence interval at appropriate confidence level
-#' @param data a vector of data from which to compute confidence interval
-#' @param indices a variable that is required by the boot function, which will be used to sample the data parameter
-#' @param l confidence level
-#' @param k value of 1 will select the lower limit of the confidence interval, and value of 2 will select the upper limit of the confidence interval
-lim <- function( data, indices, l, k )
-{
-  return( as.double( confint( data[indices], level=l, method="quantile" )[k] ) )
-}
-
-
-#' @title Hoddap-Parrish-Anderson 2 criteria (HAP2)
-#' @description Analyse a VF for the presence of a VF defect based on the following criteria: GHT "Outside normal limits" OR cluster of 3 points P<0.05 level, one of which at P<0.01 on the pattern deviation plot OR PSD at P<5%
-#' @param vf visual fields to be analyzed as a standard vfobject
+#' @rdname vfevent
 #' @param pd pattern deviation map to be analyzed
 #' @param pdp pattern deviation probability map to be analyzed
 #' @param ght result of the GHT
 #' @param helper helper map tht specifies the surrounding points of each point
-#' @return BOOL Whether VF analysis resulted in a detection of a visual field defect
-hap2 <- function(vf, pd, pdp, ght, helper )
+#' @export
+hap2 <- function(vf, pd, pdp, ght, helper)
 {
   #print( "hap2")
   
@@ -321,14 +323,12 @@ hap2 <- function(vf, pd, pdp, ght, helper )
   return( FALSE )
 }
 
-#' @title United Kingdom Glaucoma Treatment Study criteria (UKGTS)
-#' @description Analyse a VF for the presence of a VF defect based on the following criteria: cluster of 2 points at P<0.01 level OR a cluster of 3 points at P<0.05 level OR a 10 dB difference across the nasal horizontal midline at 2 or more adjacent points in the total deviation plot.
-#' @param vf visual fields to be analyzed as a standard vfobject
+#' @rdname vfevent
 #' @param td total deviation map to be analyzed
 #' @param tdp total deviation probability map to be analyzed
 #' @param helper helper map tht specifies the surrounding points of each point
-#' @return BOOL Whether VF analysis resulted in a detection of a visual field defect
-ukgts <- function( vf, td, tdp, helper )
+#' @export
+ukgts <- function(vf, td, tdp, helper)
 {
   #print( "ukgts")
   
@@ -459,16 +459,12 @@ ukgts <- function( vf, td, tdp, helper )
   return(FALSE)
 }
 
-#' @title Glaucoma Hemifield Test criteria (GHT)
-#' @description Analyse a VF for the presence of a VF defect based on the following criteria: Glaucoma Hemifield Test (GHT) see Asman & Heijl Arch Ophthalmol, vol 110, 1992
-#' @param vf visual fields to be analyzed as a standard vfobject
-#' @param td total deviation map to be analyzed
-#' @param pd pattern deviation map to be analyzed
+#' @rdname vfevent
 #' @param pdp pattern deviation probability map to be analyzed
 #' @param lims limits of normality required for the GHT algorithm
 #' @param helper helper map tht specifies the surrounding points of each point
-#' @return BOOL Whether VF analysis resulted in a detection of a visual field defect
-ght <- function( vf, td, pd, pdp, lims, helper )
+#' @export
+ght <- function(vf, td, pd, pdp, lims, helper)
 {
   # calculation of general height gh of visual field
   gh <- getgh( cbind( vf[1,1:10], td ) )
@@ -491,7 +487,7 @@ ght <- function( vf, td, pd, pdp, lims, helper )
     else if( pdp[i] > 1)
       score[i] <- 5
     else
-      score[i] <- 10 * abs( pd[i] / normvals$sunyiu_24d2$luts$pd["1%",i] )  
+      score[i] <- 10 * abs( pd[i] / getnv()$luts$pd["1%",i] )  
         
   }
   #  print(score)
@@ -534,14 +530,9 @@ ght <- function( vf, td, pd, pdp, lims, helper )
   return( "Within normal limits")
 }
 
-#' @title Foster criteria (FOST)
-#' @description Analyse a VF for the presence of a VF defect based on the following criteria: Glaucoma Hemifield Test (GHT) "outside normal limits" AND a cluster of 3 contiguous points at P<0.05 level on the pattern deviation plot
-#' @param pd pattern deviation map to be analyzed
-#' @param pdp pattern deviation probability map to be analyzed
-#' @param ght result of the GHT
-#' @param helper helper map tht specifies the surrounding points of each point
-#' @return BOOL Whether VF analysis resulted in a detection of a visual field defect
-foster <- function( pd, pdp, ght, helper )
+#' @rdname vfevent
+#' @export
+foster <- function(pd, pdp, ght, helper)
 {
   #print( "foster" )
   
@@ -607,12 +598,9 @@ foster <- function( pd, pdp, ght, helper )
   return( FALSE )
 }
 
-#' @title Low-pressure Glaucoma Treatment Study Criteria (LOGTS)
-#' @description Analyse a VF for the presence of a VF defect based on the following criteria: a cluster of 3 points at < -8 dB OR a cluster of 2 points depressed at < -10 dB on the total deviation plot
-#' @param td total deviation probability map to be analyzed
-#' @param helper helper map tht specifies the surrounding points of each point
-#' @return BOOL Whether VF analysis resulted in a detection of a visual field defect
-logts <- function( td, helper )
+#' @rdname vfevent
+#' @export
+logts <- function(td, helper)
 {
   #print( "logts")
 
@@ -698,3 +686,14 @@ logts <- function( td, helper )
   return( FALSE )
 }
 
+####################
+# INTERNAL FUNCTIONS
+####################
+# description: Compute a confidence limit by calcualting the confidence interval at appropriate confidence level
+# param: data a vector of data from which to compute confidence interval
+# param: indices a variable that is required by the boot function, which will be used to sample the data parameter
+# param: l confidence level
+# param: k value of 1 will select the lower limit of the confidence interval, and value of 2 will select the upper limit of the confidence interval
+#' @noRd
+lim <- function(data, indices, l, k)
+  return( as.double( confint( data[indices], level=l, method="quantile" )[k] ) )

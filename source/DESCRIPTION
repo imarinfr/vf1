@@ -10,6 +10,7 @@ Authors@R: c(
     person("Andrew", "Turpin", role = c("ctb")),
     person("Paul H", "Artes", role = c("ctb", "dtc")),
     person("Cord", "Huchzermeyer", role = c("ctb")),
+    person("Herman", "Stubeda", role = c("ctb")),
     person("Mitchell W", "Dul", role = c("dtc")))
 Maintainer: Ivan Marin-Franch <imarinfr@optocom.es>
 Description: A collection of tools for analyzing the field of vision. It
@@ -20,7 +21,7 @@ Description: A collection of tools for analyzing the field of vision. It
 License: GPL-3
 URL: https://www.optocom.es
 Depends: R(>= 3.5)
-Imports: Hmisc, dplyr, polyclip, deldir, plotrix, gtools, combinat, XML, oro.dicom, rlang, shiny, shinyjs, DT, htmlTable
+Imports: Hmisc, dplyr, polyclip, deldir, plotrix, gtools, combinat, XML, oro.dicom, rlang, shiny, shinyjs, DT, htmlTable, boot
 LazyData: true
 Encoding: UTF-8
 RoxygenNote: 7.1.1
