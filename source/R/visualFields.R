@@ -48,7 +48,6 @@
 #' @importFrom DT dataTableOutput renderDataTable
 #' @importFrom htmlTable htmlTable
 #' @importFrom boot boot
-#' @importFrom mosaic confint
 "_PACKAGE"
 
 #' @rdname vfenv

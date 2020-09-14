@@ -74,8 +74,6 @@
 #'  Glaucoma Treatment Study (LoGTS): Study design and baseline characteristics of enrolled 
 #'  patients.} Ophthalmology. 2005;112(3):376-385. doi:10.1016/j.ophtha.2004.10.034
 
-
-
 vfdefect <- function(vf , criteria = "all", ghtlims = NA, vfctr = visualFields::vfctrSunyiu24d2,  tpattern = "p24d2") {
   if( nrow( vf ) < 1 )
     stop( "vf is empty" )
@@ -83,7 +81,7 @@ vfdefect <- function(vf , criteria = "all", ghtlims = NA, vfctr = visualFields::
     stop( "control vf is empty" )
   if( !is.na( ghtlims ) )
   {
-    if( length( ghtlims$gh ) != 2 || length( ghtlims$sector[1,] != 6 || length( ghtlims$sector[,1] != 5) )
+    if( length( ghtlims$gh ) != 2 || length( ghtlims$sector[1,] ) != 6 || length( ghtlims$sector[,1] ) != 5 ) 
       stop( "ght limits object has improper structure" )
   }
   
@@ -218,15 +216,15 @@ vfdefect <- function(vf , criteria = "all", ghtlims = NA, vfctr = visualFields::
     # compute limits of gh, sector sums, and sector up-down differences
     for( sector in 1:GHT_SECTORS_NUM )
     {
-      sector.lims[ sector,"sum.sup99.5"] <- suppressMessages( as.double( boot( data=sector.sums[ sector,"sum.sup", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=2 )[1] ) )
-      sector.lims[ sector,"sum.inf99.5"] <- suppressMessages( as.double( boot( data=sector.sums[ sector,"sum.inf", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=2 )[1] ) )
-      sector.lims[ sector,"up.down99.5"] <- suppressMessages( as.double( boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=2 )[1] ) )
-      sector.lims[ sector,"up.down0.5" ] <- suppressMessages( as.double( boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=1 )[1] ) )
-      sector.lims[ sector,"up.down98.5"] <- suppressMessages( as.double( boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.97, k=2 )[1] ) )
-      sector.lims[ sector,"up.down1.5" ] <- suppressMessages( as.double( boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.97, k=1 )[1] ) )
+      sector.lims[ sector,"sum.sup99.5"] <- boot( data=sector.sums[ sector,"sum.sup", ], statistic=lim, R=SAMPLE_NUM, l=0.995 )$t0
+      sector.lims[ sector,"sum.inf99.5"] <- boot( data=sector.sums[ sector,"sum.inf", ], statistic=lim, R=SAMPLE_NUM, l=0.995 )$t0
+      sector.lims[ sector,"up.down99.5"] <- boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.995 )$t0
+      sector.lims[ sector,"up.down0.5" ] <- boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.005 )$t0
+      sector.lims[ sector,"up.down98.5"] <- boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.985 )$t0
+      sector.lims[ sector,"up.down1.5" ] <- boot( data=sector.sums[ sector,"up.down", ], statistic=lim, R=SAMPLE_NUM, l=0.015 )$t0
     }
-    gh.lims$gh99.5 <- suppressMessages( as.double(boot( data=gh[ 1,"gh", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=2)[1] ) )
-    gh.lims$gh0.5  <- suppressMessages( as.double(boot( data=gh[ 1,"gh", ], statistic=lim, R=SAMPLE_NUM, l=0.99, k=1)[1] ) )
+    gh.lims$gh99.5 <- boot( data=gh[ 1,"gh", ], statistic=lim, R=SAMPLE_NUM, l=0.995)$t0
+    gh.lims$gh0.5  <- boot( data=gh[ 1,"gh", ], statistic=lim, R=SAMPLE_NUM, l=0.005)$t0
     
     # assign data structure with all computed limits
     ght.lims = list( "gh" = gh.lims, "sector" = sector.lims )
@@ -235,7 +233,6 @@ vfdefect <- function(vf , criteria = "all", ghtlims = NA, vfctr = visualFields::
   {
     ght.lims = ghtlims
   }
-  assign("g",ght.lims,env=globalenv())
   
   #---------------------------------------------------------------------------------------------------------------------------------------
   #Apply vf criteria to detect glaucoma defect
@@ -296,20 +293,19 @@ vfdefect <- function(vf , criteria = "all", ghtlims = NA, vfctr = visualFields::
       stop( "invalid criteria: select all (default), hap2, ukgts, ght, foster, or logts" )
   }
   
-  return( list( "ght.lims" = ght.lims, "results" = result) )
+  return( list( "ght.limits" = ght.lims, "results" = result) )
 }
 
 ####################
 # INTERNAL FUNCTIONS
 ####################
-# description: Compute a confidence limit by calcualting the confidence interval at appropriate confidence level
-# param: data a vector of data from which to compute confidence interval
+# description: Compute the limit of probability
+# param: data a one-dimensional vector of data from which to compute the quantile limit
 # param: indices a variable that is required by the boot function, which will be used to sample the data parameter
-# param: l confidence level
-# param: k value of 1 will select the lower limit of the confidence interval, and value of 2 will select the upper limit of the confidence interval
+# param: l quantile
 #' @noRd
-lim <- function(data, indices, l, k)
-  return( as.double( confint( data[indices], level=l, method="quantile" )[k] ) )
+lim <- function(data, indices, l)
+  return( quantile( data[indices], p=l, names=FALSE ) )
 
 # description: visual field defect criteria for detecting glaucomatous damage
 # param vf Visual fields to be analyzed as a standard vfobject
