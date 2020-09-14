@@ -28,7 +28,7 @@
 #' An enabling tool for clinical visual psychophysics}. Journal of Vision,
 #' 2012, 12(11):22, 21–25
 #' @import utils graphics
-#' @importFrom stats sd lm quantile predict aggregate approx na.pass optimize pt var mad confint
+#' @importFrom stats sd lm quantile predict aggregate approx na.pass optimize pt var mad
 #' @importFrom Hmisc wtd.mean wtd.var wtd.quantile
 #' @importFrom dplyr filter
 #' @importFrom gtools combinations
@@ -48,6 +48,7 @@
 #' @importFrom DT dataTableOutput renderDataTable
 #' @importFrom htmlTable htmlTable
 #' @importFrom boot boot
+#' @importFrom mosaic confint
 "_PACKAGE"
 
 #' @rdname vfenv
