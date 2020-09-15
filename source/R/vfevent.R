@@ -5,57 +5,59 @@
 #'  Foster, United Kingdom, Glaucoma Treatment Study (UKGTS), 
 #'  and/or Low-pressure Glaucoma Treatment Study (LoGTS)
 #' @details  
-#'  The \code{vfdefect} function contains all the event criteria. The user can select which 
-#'  \code{criteria} to apply to the \code{vf}, either "all" (default), or one: "ght", "hap2", "foster", "ukgts", or "logts".
+#'  The \code{vfdefect} function is a wrapper that contains all 5 event criteria. The user 
+#'  can select which \code{criteria} to apply to the \code{vf} by passing \code{all} (default), 
+#'  \code{ght}, \code{hap2}, \code{foster}, \code{ukgts}, or \code{logts}.
 #'  
-#'  The user can provide their own limits of normality for GHT, or let the function compute the limits
-#'  by providing a vf object \code{vfctr} that contains normal visual fields.
+#'  The user can provide their own limits of normality \code{ghtlims} for GHT, or let the 
+#'  function compute the limits by providing a vf object \code{vfctr} that contains normal visual fields.
 #'  
 #' @details Event criteria description 
 #' \itemize{
-#'   \item\code{ght}[1] Decision tree focused on the comparison of 5 regions in the superior hemifield 
-#'   with their mirror images in the inferior hemifield. Criteria considered positive if the output 
-#'   was "outside normal limits"
-#'   \item\code{hap2}[2] Analyse a VF for the presence of a VF defect based on the following criteria: 
-#'   GHT "Outside normal limits" OR cluster of 3 points P<0.05 level, one of which at P<0.01 on the 
-#'   pattern deviation plot OR PSD at P<5%
-#'   \item\code{foster}[3] Analyse a VF for the presence of a VF defect based on the following criteria: 
-#'   Glaucoma Hemifield Test (GHT) "outside normal limits" AND a cluster of 3 contiguous points at 
-#'   P<0.05 level on the pattern deviation plot
-#'   \item\code{ukgts}[4] Analyse a VF for the presence of a VF defect based on the following criteria: 
-#'   cluster of 2 points at P<0.01 level OR a cluster of 3 points at P<0.05 level OR a 10 dB difference 
-#'   across the nasal horizontal midline at 2 or more adjacent points in the total deviation plot.
-#'   \item\code{logts}[5] Analyse a VF for the presence of a VF defect based on the following criteria: 
-#'   a cluster of 3 points at < -8 dB OR a cluster of 2 points depressed at < -10 dB on the total deviation plot
+#'   \item GHT: Decision tree focused on the comparison of 5 regions in the superior hemifield 
+#'   with their mirror images in the inferior hemifield. Criteria commonly considered positive 
+#'   if the output is "outside normal limits" [1]
+#'   \item HAP2: GHT "Outside normal limits" \emph{OR} a cluster of 3 points depressed at P<0.05 level, 
+#'   one of which at P<0.01 on the pattern deviation plot \emph{OR} PSD at P<5% [2]
+#'   \item Foster: GHT "outside normal limits" \emph{AND} a cluster of 3 contiguous points depressed at 
+#'   P<0.05 level on the pattern deviation plot [3]
+#'   \item UKGTS: a cluster of 2 points depressed at P<0.01 level \emph{OR} a cluster of 3 points 
+#'   depressed at P<0.05 level \emph{OR} a 10 dB difference across the nasal horizontal midline 
+#'   at 2 or more adjacent points on the total deviation plot [4]
+#'   \item LoGTS: a cluster of 3 points depressed at < -8 dB \emph{OR} a cluster of 2 
+#'   points depressed at < -10 dB on the total deviation plot [5]
 #' }
 #' 
 #' @param vf Visual fields to be analyzed as a standard vfobject
-#' @param criteria select to use all criteria (default), or a single
-#'  criteria: hap2, ukgts, ght, foster, or logts
-#' @param ghtlims a list containing limits of normality for the Glaucoma Hemifield Test (GHT); this list is returned by \code{vfdefect} function
+#' @param criteria select to use \code{all} (default) or one criteria:
+#' \code{ght}, \code{hap2}, \code{foster}, \code{ukgts}, or \code{logts}
+#' @param ghtlims a list containing limits of normality for the Glaucoma Hemifield 
+#' Test (GHT); this list is returned by \code{vfdefect} function
 #' @param vfctr control data, which is a vf object containing normative vfs
 #' @param tpattern pattern of visual field test, either 24-2 or 30-2
 #' @export
-#' @return a list of 2 objects: 
-#'  (1) limits of normality required by the Glaucoma Hemifield Test (GHT) 
-#'  (2) results of detected glaucoma damage in \code{vf} parameter using the user-selected \code{criteria} 
-#' 
+#' @return A list of 2 objects: 
+#' \itemize{
+#'  \item \code{$ght.limits} limits of normality required by the Glaucoma Hemifield Test (GHT) 
+#'  \item \code{$results} results of detected glaucoma damage in \code{vf} parameter using the 
+#'  user-selected \code{criteria} 
+#' }
 #' @examples
 #'  # check visual fields for defect using all 5 criteria
-#'  result = vfdefect( vf )
+#'  result = vfdefect( vfpwgSunyiu24d2 )
 #'  
 #'  # check visual field for defect using the GHT criteria
-#'  result = vfdefect( vf, criteria = "ght")
+#'  result = vfdefect( vfpwgSunyiu24d2, criteria = "ght")
 #'  
 #'  # speed up computation when re-using the same ght limits of normality
-#'  result1 = vfdefect( vf1 )
-#'  result2 = vfdefect( vf2, ghtlims = result1$ght.lims )
+#'  result1 = vfdefect( vfpwgSunyiu24d2 )
+#'  result2 = vfdefect( vfpwgRetest24d2, ghtlims = result1$ght.limits )
 #'  
 #'  # use a custom normative dataset with the criteria to detect glaucoma defect:
 #'  # 1.prepare the statistical environment with your normative dataset
 #'  # 2.check visual fields for defect using all 5 criteria
-#'  setnv( nvgenerate( vfControl ))
-#'  vfdefect( vf, vfctr = vfControl )
+#'  setnv( nvgenerate( vfctrSunyiu24d2 ))
+#'  result = vfdefect( vfpwgSunyiu24d2, vfctr = vfctrSunyiu24d2 )
 #' @references
 #'  [1] Asman P, Heijl A. \emph{Glaucoma Hemifield Test: Automated Visual Field Evaluation.} 
 #'  Arch Ophthalmol. 1992;110(6):812-819.
@@ -67,19 +69,20 @@
 #'  classification of glaucoma in prevalence surveys.} Br J Ophthalmol. 2002;86(2):238-42.
 #'  
 #'  [4] Garway-Heath DF, Lascaratos G, Bunce C, Crabb DP, Russell RA, Shah A. 
-#'  \emph{The United Kingdom glaucoma treatment study: A multicenter, randomized, placebo-controlled 
-#'  clinical trial: Design and methodology.} Ophthalmology. 2013;120(1):68-76.
+#'  \emph{The United Kingdom glaucoma treatment study: A multicenter, randomized, 
+#'  placebo-controlled clinical trial: Design and methodology.} Ophthalmology. 
+#'  2013;120(1):68-76.
 #'  
-#'  [5] Krupin T, Liebmann JM, Greenfield DS, Rosenberg LF, Ritch R, Yang JW. \emph{The Low-pressure 
-#'  Glaucoma Treatment Study (LoGTS): Study design and baseline characteristics of enrolled 
-#'  patients.} Ophthalmology. 2005;112(3):376-385. doi:10.1016/j.ophtha.2004.10.034
+#'  [5] Krupin T, Liebmann JM, Greenfield DS, Rosenberg LF, Ritch R, Yang JW. \emph{The 
+#'  Low-pressure Glaucoma Treatment Study (LoGTS): Study design and baseline characteristics 
+#'  of enrolled patients.} Ophthalmology. 2005;112(3):376-385.
 
 vfdefect <- function(vf , criteria = "all", ghtlims = NA, vfctr = visualFields::vfctrSunyiu24d2,  tpattern = "p24d2") {
   if( nrow( vf ) < 1 )
     stop( "vf is empty" )
   if( nrow( vfctr ) < 1 )
     stop( "control vf is empty" )
-  if( !is.na( ghtlims ) )
+  if( is.list( ghtlims ) )
   {
     if( length( ghtlims$gh ) != 2 || length( ghtlims$sector[1,] ) != 6 || length( ghtlims$sector[,1] ) != 5 ) 
       stop( "ght limits object has improper structure" )
@@ -144,7 +147,7 @@ vfdefect <- function(vf , criteria = "all", ghtlims = NA, vfctr = visualFields::
     stop( "invalid tperimtery test type: pass only p24d2 or p32d2" )
   }
 
-  if( is.na( ghtlims ) )
+  if( !is.list( ghtlims ) )
   {
     #--------------------------------------------------------------------------------------------------------------------------------------   
     # Calculate limits of normality as described in Asman & Heijl, Arch Opthalmol, 1992
