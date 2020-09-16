@@ -65,20 +65,20 @@ Event criteria description
 }
 \examples{
  # check visual fields for defect using all 5 criteria
- result = vfdefect( vfpwgSunyiu24d2 )
+ result <- vfdefect( vfpwgSunyiu24d2 )
  
  # check visual field for defect using the GHT criteria
- result = vfdefect( vfpwgSunyiu24d2, criteria = "ght")
+ result <- vfdefect( vfpwgSunyiu24d2, criteria = "ght")
  
  # speed up computation when re-using the same ght limits of normality
- result1 = vfdefect( vfpwgSunyiu24d2 )
- result2 = vfdefect( vfpwgRetest24d2, ghtlims = result1$ght.limits )
+ result1 <- vfdefect( vfpwgSunyiu24d2 )
+ result2 <- vfdefect( vfpwgRetest24d2, ghtlims = result1$ght.limits )
  
  # use a custom normative dataset with the criteria to detect glaucoma defect:
  # 1.prepare the statistical environment with your normative dataset
  # 2.check visual fields for defect using all 5 criteria
- setnv( nvgenerate( vfctrSunyiu24d2 ))
- result = vfdefect( vfpwgSunyiu24d2, vfctr = vfctrSunyiu24d2 )
+ setnv( nvgenerate( vfctrSunyiu24d2 ) )
+ result <- vfdefect( vfpwgSunyiu24d2, vfctr = vfctrSunyiu24d2 )
 }
 \references{
 [1] Asman P, Heijl A. \emph{Glaucoma Hemifield Test: Automated Visual Field Evaluation.} 
@@ -98,4 +98,7 @@ Event criteria description
  [5] Krupin T, Liebmann JM, Greenfield DS, Rosenberg LF, Ritch R, Yang JW. \emph{The 
  Low-pressure Glaucoma Treatment Study (LoGTS): Study design and baseline characteristics 
  of enrolled patients.} Ophthalmology. 2005;112(3):376-385.
+}
+\author{
+Herman Stubeda, Dalhousie University Medical School
 }

@@ -1,4 +1,5 @@
 #' @rdname vfevent
+#' @author Herman Stubeda, Dalhousie University Medical School
 #' @title Event criteria for detecting glaucomatous damage
 #' @description Analyze a visual field for the presence of a defect based on
 #'  the following criteria: Glaucoma Hemifield Test (GHT), Hodapp-Anderson-Parrish 2 (HAP2), 
@@ -44,20 +45,20 @@
 #' }
 #' @examples
 #'  # check visual fields for defect using all 5 criteria
-#'  result = vfdefect( vfpwgSunyiu24d2 )
+#'  result <- vfdefect( vfpwgSunyiu24d2 )
 #'  
 #'  # check visual field for defect using the GHT criteria
-#'  result = vfdefect( vfpwgSunyiu24d2, criteria = "ght")
+#'  result <- vfdefect( vfpwgSunyiu24d2, criteria = "ght")
 #'  
 #'  # speed up computation when re-using the same ght limits of normality
-#'  result1 = vfdefect( vfpwgSunyiu24d2 )
-#'  result2 = vfdefect( vfpwgRetest24d2, ghtlims = result1$ght.limits )
+#'  result1 <- vfdefect( vfpwgSunyiu24d2 )
+#'  result2 <- vfdefect( vfpwgRetest24d2, ghtlims = result1$ght.limits )
 #'  
 #'  # use a custom normative dataset with the criteria to detect glaucoma defect:
 #'  # 1.prepare the statistical environment with your normative dataset
 #'  # 2.check visual fields for defect using all 5 criteria
-#'  setnv( nvgenerate( vfctrSunyiu24d2 ))
-#'  result = vfdefect( vfpwgSunyiu24d2, vfctr = vfctrSunyiu24d2 )
+#'  setnv( nvgenerate( vfctrSunyiu24d2 ) )
+#'  result <- vfdefect( vfpwgSunyiu24d2, vfctr = vfctrSunyiu24d2 )
 #' @references
 #'  [1] Asman P, Heijl A. \emph{Glaucoma Hemifield Test: Automated Visual Field Evaluation.} 
 #'  Arch Ophthalmol. 1992;110(6):812-819.
@@ -89,8 +90,8 @@ vfdefect <- function(vf , criteria = "all", ghtlims = NA, vfctr = visualFields::
   }
   
   # compute td, pd maps
-  td  <- gettd( vf )
-  pd  <- getpd( td )
+  td <- gettd( vf )
+  pd <- getpd( td )
 
   if( tpattern == "p24d2" )
   {
@@ -137,7 +138,7 @@ vfdefect <- function(vf , criteria = "all", ghtlims = NA, vfctr = visualFields::
     
     # compute tdp, pdp, and extract relevant columns
     range <- which( colnames( vf ) == "l1" ) : which( colnames( vf ) == "l76" )
-    tdp <- tdpval( td )[range]
+    tdp <- gettdp( td )[range]
     pdp <- getpdp( pd )[range]
     td  <-         td  [range]
     pd  <-         pd  [range]
@@ -159,12 +160,12 @@ vfdefect <- function(vf , criteria = "all", ghtlims = NA, vfctr = visualFields::
     #    c. compute means of limits from the 500 samples
   
     # define constants
-    CTRL_VF_NUM     = nrow(vfctr)
-    SUMS_NUM        = 3
-    GHT_SECTORS_NUM = 5
-    SECTORS_LIM_NUM = 6
-    GH_LIM_NUM      = 2
-    SAMPLE_NUM      = 500
+    CTRL_VF_NUM     <- nrow(vfctr)
+    SUMS_NUM        <- 3
+    GHT_SECTORS_NUM <- 5
+    SECTORS_LIM_NUM <- 6
+    GH_LIM_NUM      <- 2
+    SAMPLE_NUM      <- 500
     
     # compute td, pd, pdp maps, and extract relevant rows
     tdctr  <- gettd ( vfctr )
@@ -230,11 +231,11 @@ vfdefect <- function(vf , criteria = "all", ghtlims = NA, vfctr = visualFields::
     gh.lims$gh0.5  <- boot( data=gh[ 1,"gh", ], statistic=lim, R=SAMPLE_NUM, l=0.005)$t0
     
     # assign data structure with all computed limits
-    ght.lims = list( "gh" = gh.lims, "sector" = sector.lims )
+    ght.lims <- list( "gh" = gh.lims, "sector" = sector.lims )
   }
   else
   {
-    ght.lims = ghtlims
+    ght.lims <- ghtlims
   }
   
   #---------------------------------------------------------------------------------------------------------------------------------------
@@ -244,7 +245,7 @@ vfdefect <- function(vf , criteria = "all", ghtlims = NA, vfctr = visualFields::
   if( criteria == "all")
   {
     result <- data.frame( array( FALSE, c( nrow( vf ), 5 ) ) )
-    colnames( result ) = c( "ght", "hap2", "foster", "ukgts", "logts" )
+    colnames( result ) <- c( "ght", "hap2", "foster", "ukgts", "logts" )
   }
   else
   {
