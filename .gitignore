@@ -6,3 +6,4 @@
 *.xlsx
 *.csv
 *.Rbuildignore
+.Rproj.user
