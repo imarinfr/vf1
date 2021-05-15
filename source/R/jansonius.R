@@ -44,12 +44,6 @@
 #' receptive field density in the visual field}. Vision Research,
 #' 47:2901–2911, 2007
 #' 
-#' G. Montesano, G. Ometto, R. E. Hogg, L. M. Rossetti, D. F. Garway-Heath,
-#' and D. P. Crabb. \emph{Revisiting the Drasdo Model: Implications for 
-#' Structure-Function Analysis of the Macular Region}. 
-#' Translational Vision Science and Technology,
-#' 9(10):15, 2020
-#' 
 #' D. C. Hood, A. S. Raza, D. M. C. G. V., J. G. Odel, V. C. Greenstein,
 #' J. M. Liebmann, and R. Ritch. \emph{Initial arcuate defects within the
 #' central 10  degrees in glaucoma}. Investigative Ophthalmology and Visual
@@ -59,6 +53,12 @@
 #' J. M. Liebmann, R. Ritch, and D. C. Hood. \emph{Retinal ganglion cell
 #' layer thickness and local visual field sensitivity in glaucoma}.
 #' Archives of Ophthalmology, 129(12):1529-1536, 2011
+#' 
+#' G. Montesano, G. Ometto, R. E. Hogg, L. M. Rossetti, D. F. Garway-Heath,
+#' and D. P. Crabb. \emph{Revisiting the Drasdo Model: Implications for 
+#' Structure-Function Analysis of the Macular Region}. 
+#' Translational Vision Science and Technology,
+#' 9(10):15, 2020
 #' 
 #' @examples
 #' # get ganglion-cell soma locations from visual field locations
@@ -176,17 +176,12 @@ psi2oct <- function(psi0, diam = 12) {
 }
 
 #' @rdname jansonius
-#' @import pracma
-#' @param coord coordinates in degrees (in right eye visual field convention)
-#' @param FovDisc_Angle fovea-disc angle in degrees (in right eye retina convention) 
+#' @param angle fovea-disc angle in degrees
 #' @export
-vf2gc <- function(coord, FovDisc_Angle = 0) {
-  drasdo_lut_l <- NULL
-  data("drasdo_lut_l", envir=environment())
-  
-  Drasdo_LUT <- drasdo_lut_l$Drasdo_LUT
-  Degs <- drasdo_lut_l$Degs
-  MM <- drasdo_lut_l$MM
+vf2gc <- function(coord, angle = 0) {
+  Drasdo_LUT <- visualFields::drasdolut$Drasdo_LUT
+  Degs <- visualFields::drasdolut$Degs
+  MM <- visualFields::drasdolut$MM
   
   ############################################################################################################
   #Input to the function must be in visual field coordinates for a right eye:
@@ -208,10 +203,10 @@ vf2gc <- function(coord, FovDisc_Angle = 0) {
   #Inverts y axis to convert to retinal coordinates (necessary for next steps)
   y <- -y
   #Converts Fovea-Disc angle to radians for following calculations
-  FovDisc_Angle <- FovDisc_Angle/180*pi
+  angle <- angle/180*pi
   
   #Rotate so that it matches Drasdo assumptions (Fovea-Optic Nerve angle is 0)
-  R <- rbind(c(cos(FovDisc_Angle), -sin(FovDisc_Angle)), c(sin(FovDisc_Angle), cos(FovDisc_Angle)))
+  R <- rbind(c(cos(angle), -sin(angle)), c(sin(angle), cos(angle)))
   XY <- R%*%rbind(x, y)
   x <- XY[1,]
   y <- XY[2,]

@@ -7,3 +7,4 @@
 *.csv
 *.Rbuildignore
 .Rproj.user
+.DS_Store

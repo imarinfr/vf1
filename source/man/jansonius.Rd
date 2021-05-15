@@ -19,10 +19,10 @@ loc2psi(coord, r0 = 4)
 
 psi2oct(psi0, diam = 12)
 
-vf2gc(coord, FovDisc_Angle = 0)
+vf2gc(coord, angle = 0)
 }
 \arguments{
-\item{coord}{coordinates in degrees (in right eye visual field convention)}
+\item{coord}{coordinates of locations in the visual field}
 
 \item{rpsi}{visual field locations in polar coordinates of the
 distorted space of the Jansonius map}
@@ -35,7 +35,7 @@ Changing it changes the calculated average bundle paths.}
 \item{diam}{diamater in degrees of visual angle of the OCT circular
 scan centered at the center of the ONH}
 
-\item{FovDisc_Angle}{fovea-disc angle in degrees (in right eye retina convention)}
+\item{angle}{fovea-disc angle in degrees}
 }
 \description{
 Generates a function that renders the average path of
@@ -108,12 +108,6 @@ length of Henle fibers in the human retina and a model of ganglion
 receptive field density in the visual field}. Vision Research,
 47:2901–2911, 2007
 
-G. Montesano, G. Ometto, R. E. Hogg, L. M. Rossetti, D. F. Garway-Heath,
-and D. P. Crabb. \emph{Revisiting the Drasdo Model: Implications for 
-Structure-Function Analysis of the Macular Region}. 
-Translational Vision Science and Technology,
-9(10):15, 2020
-
 D. C. Hood, A. S. Raza, D. M. C. G. V., J. G. Odel, V. C. Greenstein,
 J. M. Liebmann, and R. Ritch. \emph{Initial arcuate defects within the
 central 10  degrees in glaucoma}. Investigative Ophthalmology and Visual
@@ -123,4 +117,10 @@ A. S. Raza, J. Cho, D. M. C. G. V., H. Wang, X. Zhang, R. H. Kardon,
 J. M. Liebmann, R. Ritch, and D. C. Hood. \emph{Retinal ganglion cell
 layer thickness and local visual field sensitivity in glaucoma}.
 Archives of Ophthalmology, 129(12):1529-1536, 2011
+
+G. Montesano, G. Ometto, R. E. Hogg, L. M. Rossetti, D. F. Garway-Heath,
+and D. P. Crabb. \emph{Revisiting the Drasdo Model: Implications for 
+Structure-Function Analysis of the Macular Region}. 
+Translational Vision Science and Technology,
+9(10):15, 2020
 }
