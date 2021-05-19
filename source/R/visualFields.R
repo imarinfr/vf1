@@ -48,7 +48,7 @@
 #' @importFrom DT dataTableOutput renderDataTable
 #' @importFrom htmlTable htmlTable
 #' @importFrom boot boot
-#' @importFrom pracma inv
+#' @importFrom pracma inv interp2
 "_PACKAGE"
 
 #' @rdname vfenv

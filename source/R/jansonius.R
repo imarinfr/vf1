@@ -216,8 +216,8 @@ vf2gc <- function(coord, angle = 0) {
   ymm <- sign(y)*approx(x = Degs, y = MM, abs(y))$y
   
   #Calculates displacement in mm using precalculated two dimensional LUTs
-  xdispMM <- pracma::interp2(x = Drasdo_LUT$Xv, y = Drasdo_LUT$Yv, Z = Drasdo_LUT$xlut, xp = xmm, yp = ymm)
-  ydispMM <- pracma::interp2(x = Drasdo_LUT$Xv, y = Drasdo_LUT$Yv, Z = Drasdo_LUT$ylut, xp = xmm, yp = ymm)
+  xdispMM <- interp2(x = Drasdo_LUT$Xv, y = Drasdo_LUT$Yv, Z = Drasdo_LUT$xlut, xp = xmm, yp = ymm)
+  ydispMM <- interp2(x = Drasdo_LUT$Xv, y = Drasdo_LUT$Yv, Z = Drasdo_LUT$ylut, xp = xmm, yp = ymm)
   
   #Unchanged outside diplacement zone (no NAs within 30 degrees)
   isNa <- which(is.na(xdispMM))

@@ -24,13 +24,13 @@ contain precomputed vectors of degrees and mm on the retina for the same schemat
 These are used by the function vf2gc().
 }
 \references{
-#' G. Montesano, G. Ometto, R. E. Hogg, L. M. Rossetti, D. F. Garway-Heath,
+G. Montesano, G. Ometto, R. E. Hogg, L. M. Rossetti, D. F. Garway-Heath,
 and D. P. Crabb. \emph{Revisiting the Drasdo Model: Implications for 
 Structure-Function Analysis of the Macular Region}. 
 Translational Vision Science and Technology,
 9(10):15, 2020
 
-#' N. Drasdo, C. L. Millican, C. R. Katholi, and C. A. Curcio. \emph{The
+N. Drasdo, C. L. Millican, C. R. Katholi, and C. A. Curcio. \emph{The
 length of Henle fibers in the human retina and a model of ganglion
 receptive field density in the visual field}. Vision Research,
 47:2901–2911, 2007
