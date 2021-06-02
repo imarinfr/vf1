@@ -82,7 +82,7 @@ loadhfaxml <- function(file, type = "pwg", repeated = mean) {
   locd <- locd[order(locd[,1]),]
   locd <- locd[order(-locd[,2]),]
   bs <- which(!(paste(s[,1], s[,2], sep = "_") %in% paste(locd[,1], locd[,2], sep = "_")))
-  cutoffs <- c(50, 5, 2, 1, 0.5) # cutoff lookup for TD and PD probability levels
+  cutoffs <- c(50, 5, 2, 1, 0.5) / 100 # cutoff lookup for TD and PD probability levels
   # total deviation values
   if("NUM_TOTAL_DEV_VALUE_POINTS" %in% names(dat)) {
     td <- xmldevvals(dat$TOTAL_DEVIATION_VALUE_LIST, as.numeric(dat$NUM_TOTAL_DEV_VALUE_POINTS),
@@ -112,7 +112,7 @@ loadhfaxml <- function(file, type = "pwg", repeated = mean) {
     pdp <- cbind(info, t(pdp))
     names(pdp)[getvfcols()] <- paste0("l", 1:nloc)
   }
-  cutoffs <- c(50, NA, 5, 2, 1, 0.5) # cutoff lookup for probability levels of global indices
+  cutoffs <- c(50, NA, 5, 2, 1, 0.5) / 100 # cutoff lookup for probability levels of global indices
   if("GLOBAL_INDICES" %in% names(dat)) {
     vals <- vf[,getvfcols()]
     if(length(bs) > 1) vals <- vals[,-bs]
@@ -205,7 +205,7 @@ loadhfadicom <- function(file, type = "pwg", repeated = mean) {
   pdp <- cbind(info, t(s$pdp))
   names(vf)[getvfcols()] <- names(td)[getvfcols()] <- names(tdp)[getvfcols()] <- 
     names(pd)[getvfcols()] <- names(pdp)[getvfcols()] <- paste0("l", 1:nrow(s))
-  cutoffs <- c(50, NA, 5, 2, 1, 0.5) # cutoff lookup for probability levels of global indices
+  cutoffs <- c(50, NA, 5, 2, 1, 0.5) / 100 # cutoff lookup for probability levels of global indices
   if("GLOBAL_INDICES" %in% names(dat)) {
     vals <- vf[,getvfcols()]
     if(length(bs) > 1) vals <- vals[,-bs]

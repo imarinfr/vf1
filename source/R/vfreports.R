@@ -406,13 +406,13 @@ fillinfosfa <- function(vf) {
   gp <- getglp(g)
   # format global indices
   ms   <- ifelse(isnotempty(g$msens),  paste(round(g$msens, 1), "dB"), "")
-  msp  <- ifelse(isnotempty(gp$msens), paste0("(p <", gp$msens, "%)"), "")
+  msp  <- ifelse(isnotempty(gp$msens), paste0("(p < ", gp$msens, ")"), "")
   md   <- ifelse(isnotempty(g$tmd),    paste(round(g$tmd, 1), "dB"),   "")
-  mdp  <- ifelse(isnotempty(gp$tmd),   paste("(p <", gp$tmd, "%)"),    "")
+  mdp  <- ifelse(isnotempty(gp$tmd),   paste0("(p < ", gp$tmd, ")"),    "")
   psd  <- ifelse(isnotempty(g$psd),    paste(round(g$psd, 1), "dB"),   "")
-  psdp <- ifelse(isnotempty(gp$psd),   paste("(p <", gp$psd, "%)"),    "")
+  psdp <- ifelse(isnotempty(gp$psd),   paste0("(p < ", gp$psd, ")"),    "")
   vfi  <- ifelse(isnotempty(g$vfi),    paste(round(g$vfi, 1), "%"),   "")
-  vfip <- ifelse(isnotempty(gp$vfi),   paste("(p <", gp$vfi, "%)"),    "")
+  vfip <- ifelse(isnotempty(gp$vfi),   paste0("(p < ", gp$vfi, ")"),    "")
   # format reliability indices
   fpr <- ifelse(isnotempty(vf$fpr), paste(round(100 * vf$fpr), "%"), "")
   fnr <- ifelse(isnotempty(vf$fnr), paste(round(100 * vf$fnr), "%"), "")
@@ -439,7 +439,7 @@ fillinfospa <- function(res, type, nperm, trunc, testSlope) {
   # mean sensitivity
   msint <- format(round(res$ms$int, 1),  nsmall = 1)
   mssl  <- format(round(res$ms$sl, 2),   nsmall = 2)
-  msp   <- format(round(res$ms$pval, 1), nsmall = 1)
+  msp   <- format(round(res$ms$pval, 3), nsmall = 1)
   idxp <- which(mssl >= 0)
   idxn <- which(mssl < 0)
   mssl[idxp] <- paste("+", mssl[idxp])
@@ -447,7 +447,7 @@ fillinfospa <- function(res, type, nperm, trunc, testSlope) {
   # mean deviation
   mdint <- format(round(res$md$int, 1),  nsmall = 1)
   mdsl  <- format(round(res$md$sl, 2),   nsmall = 2)
-  mdp   <- format(round(res$md$pval, 1), nsmall = 1)
+  mdp   <- format(round(res$md$pval, 3), nsmall = 1)
   idxp <- which(mdsl >= 0)
   idxn <- which(mdsl < 0)
   mdsl[idxp] <- paste("+", mdsl[idxp])
@@ -455,7 +455,7 @@ fillinfospa <- function(res, type, nperm, trunc, testSlope) {
   # general height
   ghint <- format(round(res$gh$int, 1),  nsmall = 1)
   ghsl  <- format(round(res$gh$sl, 2),   nsmall = 2)
-  ghp   <- format(round(res$gh$pval, 1), nsmall = 1)
+  ghp   <- format(round(res$gh$pval, 3), nsmall = 1)
   idxp <- which(ghsl >= 0)
   idxn <- which(ghsl < 0)
   ghsl[idxp] <- paste("+", ghsl[idxp])
@@ -465,9 +465,9 @@ fillinfospa <- function(res, type, nperm, trunc, testSlope) {
   if(type == "td") poplrtype <- "Total Deviation"
   if(type == "pd") poplrtype <- "Pattern Deviation"
   sl <- format(round(res$poplr$csl,  1), nsmall = 1)
-  pl <- format(round(res$poplr$cslp, 1), nsmall = 1)
+  pl <- format(round(res$poplr$cslp, 3), nsmall = 1)
   sr <- format(round(res$poplr$csr,  1), nsmall = 1)
-  pr <- format(round(res$poplr$csrp, 1), nsmall = 1)
+  pr <- format(round(res$poplr$csrp, 3), nsmall = 1)
   # print in the pdf file
   rect(0, 0, 1, 1, col = "#F6F6F6", border = NA)
   text(0.50, 0.96, "Patient Information", adj = c(0.5, 1), cex = 1.2, font = 2)
@@ -477,15 +477,15 @@ fillinfospa <- function(res, type, nperm, trunc, testSlope) {
   segments(0.02, 0.68, 0.98, 0.68, col = "#BBBBBB")
   text(0.50, 0.64, "Global indices", adj = c(0.5, 1), cex = 1.2, font = 2)
   text(0.05, 0.56, "MS:\nMD:\nGH:", adj = c(0, 1), font = 2)
-  text(0.95, 0.56, paste0(msint, " ", mssl, " y (p < ", msp, "%)\n",
-                          mdint, " ", mdsl, " y (p < ", mdp, "%)\n",
-                          ghint, " ", ghsl, " y (p < ", ghp, "%)"), adj = c(1, 1))
+  text(0.95, 0.56, paste0(msint, " ", mssl, " y (p < ", msp, ")\n",
+                          mdint, " ", mdsl, " y (p < ", mdp, ")\n",
+                          ghint, " ", ghsl, " y (p < ", ghp, ")"), adj = c(1, 1))
   segments(0.02, 0.42, 0.98, 0.42, col = "#BBBBBB")
   text(0.50, 0.38, "PoPLR slope analysis", adj = c(0.5, 1), cex = 1.2, font = 2)
   text(0.05, 0.30, paste0("data type:\npermutations:\ntruncation:\ntest slope:\n\nS (right):\nS (left):"),
        adj = c(0, 1), font = 2)
   text(0.95, 0.30, paste0(poplrtype, "\n", nperm, "\n", trunc, "\n", testSlope, "\n\n",
-                          sr, " (p < ", pr, "%)\n", sl, " (p < ", pl, "%)"), adj = c(1, 1))
+                          sr, " (p < ", pr, ")\n", sl, " (p < ", pl, ")"), adj = c(1, 1))
 }
 
 #' @noRd
@@ -628,13 +628,11 @@ drawhist <- function(res, alternative, ...) {
     coltxt  <- "#FF0000"
     colhist <- "#FF000080"
     s       <- res$csl
-    pval    <- res$cslp
     sp      <- res$cslall
   } else {
     coltxt  <- "#008000"
     colhist <- "#00800040"
     s       <- res$csr
-    pval    <- res$csrp
     sp      <- res$csrall
   }
   s  <- s  / length(res$pval) # average by the number of locations here
@@ -673,15 +671,15 @@ fillinfosfashiny <- function(vfsel) {
   md   <- paste(round(g$tmd),       " dB")
   psd  <- paste(round(g$psd),       " dB")
   vfi  <- paste(round(g$vfi),       "  %")
-  msp  <- paste0("(p < ", gp$msens, " %)")
-  mdp  <- paste0("(p < ", gp$tmd,   " %)")
-  psdp <- paste0("(p < ", gp$psd,   " %)")
-  vfip <- paste0("(p < ", gp$vfi,   " %)")
+  msp  <- paste0("(p < ", gp$msens, ")")
+  mdp  <- paste0("(p < ", gp$tmd,   ")")
+  psdp <- paste0("(p < ", gp$psd,   ")")
+  vfip <- paste0("(p < ", gp$vfi,   ")")
   infoTab[,7] <- c(ms, md, psd, vfi)
   infoTab[,8] <- "&nbsp;" # leave small space between columns
   infoTab[,9] <- c(msp, mdp, psdp, vfip)
   # check if text color needs to change (if p-value < 0.05)
-  cssTab[c(gp$msens, gp$tmd, gp$psd, gp$vfi) < 5, 7:9] <- "color: #fb0000; font-weight: 700;"
+  cssTab[c(gp$msens, gp$tmd, gp$psd, gp$vfi) < 0.05, 7:9] <- "color: #fb0000; font-weight: 700;"
   # false positive and negative rates and fixation losses
   fpr <- paste(round(100 * vfsel$fpr), "%")
   fnr <- paste(round(100 * vfsel$fnr), "%")
@@ -720,25 +718,25 @@ fillinfospashiny <- function(selres) {
   ms  <- paste(round(selres$ms$sl, 2), "dB / y")
   md  <- paste(round(selres$md$sl, 2), "dB / y")
   gh  <- paste(round(selres$gh$sl, 2), "dB / y")
-  msp <- paste0("(p < ", round(selres$ms$pval), " %)")
-  mdp <- paste0("(p < ", round(selres$md$pval), " %)")
-  ghp <- paste0("(p < ", round(selres$gh$pval), " %)")
+  msp <- paste0("(p < ", round(selres$ms$pval, 3), ")")
+  mdp <- paste0("(p < ", round(selres$md$pval, 3), ")")
+  ghp <- paste0("(p < ", round(selres$gh$pval, 3), ")")
   infoTab[,7] <- c(ms, md, gh, "")
   infoTab[,8] <- "&nbsp;" # leave small space between columns
   infoTab[,9] <- c(msp, mdp, ghp, "")
-  cssTab[c(selres$ms$pval, selres$md$pval, selres$gh$pval, 100) < 5, 7:9] <- "color: #fb0000; font-weight: 700;"
+  cssTab[c(selres$ms$pval, selres$md$pval, selres$gh$pval, 1) < 0.05, 7:9] <- "color: #fb0000; font-weight: 700;"
   # progression PoPLR
   csl  <- round(selres$poplr$csl)
   csr  <- round(selres$poplr$csr)
-  cslp <- paste0("(p < ", round(selres$poplr$cslp), " %)")
-  csrp <- paste0("(p < ", round(selres$poplr$csrp), " %)")
+  cslp <- paste0("(p < ", round(selres$poplr$cslp, 3), ")")
+  csrp <- paste0("(p < ", round(selres$poplr$csrp, 3), ")")
   infoTab[,11] <- c("<b>S left:</b>", "<b>S right:</b>", "", "")
   infoTab[,12] <- "&nbsp;" # leave small space between columns
   infoTab[,13] <- c(csl, csr, "", "")
   infoTab[,14] <- "&nbsp;" # leave small space between columns
   infoTab[,15] <- c(cslp, csrp, "", "")
-  cssTab[c(selres$poplr$cslp, 100, 100, 100) < 5, 12:15] <- "color: #fb0000; font-weight: 700;"
-  cssTab[c(100, selres$poplr$csrp, 100, 100) < 5, 12:15] <- "color: #228b22; font-weight: 700;"
+  cssTab[c(selres$poplr$cslp, 1, 1, 1) < 0.05, 12:15] <- "color: #fb0000; font-weight: 700;"
+  cssTab[c(1, selres$poplr$csrp, 1, 1) < 0.05, 12:15] <- "color: #228b22; font-weight: 700;"
   return(htmlTable(infoTab, css.cell = cssTab,
                    css.table = "margin-top: 0em; margin-bottom: 1em;",
                    align = c("l", "c", "r", "c", "l", "c", "r", "c", "r", "c", "l", "c", "r", "c", "r"),

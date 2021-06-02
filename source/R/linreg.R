@@ -142,7 +142,7 @@ glr <- function(g, type = "md", testSlope = 0) {
   if(type == "sd" || type == "psd") pval <- 1 - pval
   return(list(id = g$id[1], eye = g$eye[1], type = type, testSlope = testSlope,
               nvisits = nvisits, dates = g$date, years = years, data = y, pred = pred,
-              sl = sl, int = int, se = se, tval = tval, pval = 100 * pval))
+              sl = sl, int = int, se = se, tval = tval, pval = pval))
 }
 
 #' @rdname linreg
@@ -192,7 +192,7 @@ plr <- function(vf, type = "td", testSlope = 0) {
   pred <- sapply(as.list(rbind(int, sl)), function(beta) {beta[1] + beta[2] * years})
   return(list(id = vf$id[1], eye = vf$eye[1], type = type, testSlope = testSlope,
               nvisits = nvisits, dates = vf$date, years = years, data = vf[,getvfcols()], pred = pred,
-              sl = sl, int = int, se = se, tval = tval, pval = 100 * pval))
+              sl = sl, int = int, se = se, tval = tval, pval = pval))
 }
 
 #' @rdname linreg
@@ -245,9 +245,9 @@ poplr <- function(vf, type = "td", testSlope = 0, nperm = factorial(7), trunc = 
   return(list(id = vf$id[1], eye = vf$eye[1], type = type, testSlope = testSlope,
               nvisits = nvisits, dates = vf$date, years = years, data = vf[,getvfcols()], pred = pred,
               sl = pstats$sl, int = pstats$int, se = pstats$se, tval = pstats$tval,
-              pval = 100 * pstats$pval, nperm = nperm,
-              csl = cstats$csl, cslp = 100 * cstats$cslp,
-              csr = cstats$csr, csrp = 100 * cstats$csrp,
+              pval = pstats$pval, nperm = nperm,
+              csl = cstats$csl, cslp = cstats$cslp,
+              csr = cstats$csr, csrp = cstats$csrp,
               pstats = pstats, cstats = cstats))
 }
 

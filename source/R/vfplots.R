@@ -143,7 +143,7 @@ vfcolscheme <- function(probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 0.98, 0.99, 
   if(!any(probs == 0) || !any(probs == 1))
     stop("probability values must include values 0 and 1")
   probs <- sort(probs)
-  map <- data.frame(probs = 100 * probs, cols = cols, stringsAsFactors = FALSE) # fucking hate R defaulting to factors
+  map <- data.frame(probs = probs, cols = cols, stringsAsFactors = FALSE) # fucking hate R defaulting to factors
   fun <- as.function(alist(vf = , devp = , {
     vf[which(is.na(devp))]   <- Inf
     devp[which(is.na(devp))] <- Inf # assign infinite to locations to ignore (e.g., blind spot)
@@ -168,7 +168,7 @@ vfprogcolscheme <- function(probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 1),
   if(!any(probs == 0) || !any(probs == 1))
     stop("probability values must include values 0 and 1")
   probs <- sort(probs)
-  map <- data.frame(probs = 100 * probs, cols = cols, stringsAsFactors = FALSE) # fucking hate R defaulting to factors
+  map <- data.frame(probs = probs, cols = cols, stringsAsFactors = FALSE) # fucking hate R defaulting to factors
   fun <- as.function(alist(vals = , {
     vals[which(is.na(vals))] <- Inf # Assign infinite to locations to ignore (e.g., blind spot)
     cols <- rep(NA, length(vals))

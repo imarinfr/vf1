@@ -130,7 +130,7 @@ nvgenerate <- function(vf, method = "pointwise",
   td <- tdfun(vf)
   pd <- pdfun(td)
   # define mapping functions to get probability levels
-  luts <- list(probs = 100 * probs, td = NA, pd = NA, g = NA) # prepare list to 
+  luts <- list(probs = probs, td = NA, pd = NA, g = NA) # prepare list to 
   tdplutfun <- lutdef(td, probs, "quantile")
   pdplutfun <- lutdef(pd, probs, "quantile")
   luts$td   <- tdplutfun$lut
@@ -235,12 +235,12 @@ lutdef <- function(vf, probs, type = "quantile", ...) {
   # probability level look up table
   lut <- apply(vf, 2, wtd.quantile, type = type, na.rm = TRUE,
                weights = w, normwt = FALSE, probs = probs, ...)
-  row.names(lut) <- paste0(100 * probs, "%")
+  row.names(lut) <- as.character(probs)
   lut[,nacols] <- as.numeric(NA) # put back NAs in blind spot locations
   lut[1,] <- -Inf # theoretical min for quantile 0 is minus infinite
   lut[nrow(lut),] <- +Inf # theoretical min for quantile 0 is plus infinite
   fun <- as.function(alist(vf = , {
-    lev <- 100 * probs # levels
+    lev <- probs # levels
     vals  <- vf[,getvfcols()]
     valsp <- as.data.frame(matrix(as.numeric(NA), nrow(vals), ncol(vals)))
     names(valsp) <- names(vals)
@@ -326,14 +326,14 @@ lutgdef <- function(g, probs, type = "quantile", ...) {
   lut[,idxs] <- apply(g[,idxs], 2, wtd.quantile,
                       type = type, na.rm = TRUE, weights = w,
                       normwt = FALSE, probs = 1 - probs, ...)
-  rownames(lut) <- paste0(100 * probs, "%")
+  rownames(lut) <- paste0(probs, "%")
   lut[,nacols] <- NA  # put back NAs in blind spot locations
   lut[1,idxm] <- -Inf # theoretical min for quantile 0 is minus infinite
   lut[nrow(lut),idxm] <- +Inf # theoretical min for quantile 0 is plus infinite
   lut[1,idxs] <- +Inf # theoretical min for quantile 0 is minus infinite
   lut[nrow(lut),idxs] <- -Inf # theoretical min for quantile 0 is plus infinite
   fun <- as.function(alist(g = , {
-    lev <- 100 * probs # levels
+    lev <- probs # levels
     vfinfo <- g[,1:(getlocini() - 1)]
     g <- g[,getlocini():ncol(g)]
     gp <- as.data.frame(matrix(NA, nrow(g), ncol(g)))
@@ -431,9 +431,9 @@ vfcomputevfi <- function(coord, tmd, mnsens, vf, td, pd, tdp, pdp) {
   # if within normal limits, then score is 100
   # if MD is greater than -20 dB, look at PD probability levels
   usePD <- matrix(rep(tmd >= -20, ncol(tdp)), nrow(tdp), ncol(tdp))
-  vfiloc[usePD & pdp > 5] <- 100
+  vfiloc[usePD & pdp > 0.05] <- 100
   # else, look at TD probability levels
-  vfiloc[!usePD & tdp > 5] <- 100
+  vfiloc[!usePD & tdp > 0.05] <- 100
   # non-seen locations have a score of 0
   vfiloc[vf < 0] <- 0
   return(apply(vfiloc, 1, wtd.mean, weights = w)) # return weighted sum of scores
