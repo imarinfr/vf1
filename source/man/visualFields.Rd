@@ -49,7 +49,7 @@ Other contributors:
   \item Andrew Turpin [contributor]
   \item Paul H Artes [contributor, data contributor]
   \item Cord Huchzermeyer [contributor]
-  \item Herman Stubeda [contributor]
+  \item Giovanni Montesano [contributor]
   \item Mitchell W Dul [data contributor]
 }
 
