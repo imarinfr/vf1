@@ -34,19 +34,14 @@
 #'   \item\code{getpd} computes pattern-deviation (PD) values
 #'   \item\code{getpdp} computes pattern-deviation (PD) probability values
 #'   \item\code{getgh} computes the general height (GH) from the TD tables
-#'   \item\code{getg} computes visual fields global indices
-#'   \item\code{getgp} computes computes visual fields global indices probability values
+#'   \item\code{getgl} computes visual fields global indices
+#'   \item\code{getglp} computes computes visual fields global indices probability values
 #' }
 #' @details
 #' \itemize{
 #'   \item\code{vfselect} when selecting the last or first few visual fields per
 #'     subject and eye, if that subject and eye has fewer than \code{n} visits,
 #'     then all visits are returned
-#'   \item\code{vfaggregate} this is a restricted version of \code{\link{aggregate}}
-#'     that only allows to use part of the key hierarchically, and operates on all
-#'     data frames of the \code{VisualField} object. The restriction is that only
-#'     aggregates that are allowed are `\code{newkey = c("id", "eye")}` and
-#'     `\code{newkey = c("id", "eye", "date")}`
 #' }
 #' @section Structure of visual fields data:
 #' Visual fields data is the central object used in visualFields. It is a table of
