@@ -68,14 +68,13 @@ a list with the following elements:
 \details{
 \itemize{
   \item\code{vfaggregate} this is a restricted version of \code{\link{aggregate}}
-    that only allows to use part of the key hierarchically. The restriction is
-    that the only aggregates that are allowed are by \code{eye} (id and eye) and
-    by \code{date} (id, eye, and date). It returns the aggregated value for all
+    that only allows to use part of the key hierarchically, and operates on all
+    data frames of the \code{VisualField} object. The restriction is that only
+    aggregates that are allowed are `\code{newkey = c("id", "eye")}` and
+    `\code{newkey = c("id", "eye", "date")}`. It returns the aggregated value for all
     numeric columns grouped and ordered by the new key (id and eye, or id, eye,
     and date). If the aggregate grouping is by \code{eye} and the function, then
-    the \code{date} returned is the average. All other columns with that are
-    not numeric are returned blank unless the value for all the series for the
-    new key are the same, then it returns that value
+    the \code{date} returned is the average.
 }
 }
 \examples{
