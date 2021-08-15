@@ -140,37 +140,44 @@ vfisvalid <- function(vf) {
   # check mandatory fields exist and have the correct format
   mandatory <- c("id", "eye", "date", "time", "age")
   eyecodes  <- c("OD", "OS", "OU")
-  if(!all(mandatory %in% names(vf))) {
-    warning(paste("Missing mandatory fields:", paste(mandatory, collapse = ", ")))
-    return(FALSE)
-  }
+  missingField <- !all(sapply(mandatory, function(field) {
+    if(!(field %in% names(vf))) {
+      warning(paste("Missing mandatory fields:", field, call. = FALSE))
+      return(FALSE)
+    }
+    return(TRUE)
+  }))
+  if(missingField) return(FALSE)
   # no NAs allowed in mandatory fields
-  if(any(sapply(mandatory, function(col) any(is.na(vf[,col]))))) {
-    warning(paste("At least one of the mandatory fields",
-                  paste(mandatory, collapse = ", "),
-                  "contains NA values"))
-    return(FALSE)
-  }
+  nacols <- !all(sapply(mandatory, function(field) {
+    if(any(is.na(vf[,field]))) {
+      warning(paste("The mandatory field", field, "contains NAs"), call. = FALSE)
+      return(FALSE)
+    }
+    return(TRUE)
+  }))
+  if(nacols) return(FALSE)
   # check eye has only allowed values "OD" "OS", or "OU"
   if(!all(unique(vf$eye) %in% eyecodes)) {
-    warning(paste("Wrong eye code. They must be one of the following:", paste(eyecodes, collapse = ", ")))
+    warning(paste("Wrong eye code. They must be one of the following:",
+                  paste(eyecodes, collapse = ", ")), call. = FALSE)
     return(FALSE)
   }
   # check date does have Date class
   if(class(vf$date) != "Date") {
-    warning("Field 'date' must be sucessfully converted to 'Date' class")
+    warning("Field 'date' must be sucessfully converted to 'Date' class", call. = FALSE)
     return(FALSE)
   }
   # check data structure for all locations is correct
   if((ncol(vf) - getlocini() + 1) != length(getvfcols())) {
-    warning("Unexpected number of columns with visual field data")
+    warning("Unexpected number of columns with visual field data", call. = FALSE)
     return(FALSE)
   }
   # check that all data columns are numeric (or are all their values NA meaning, which
   # may happen for locations to be excluded from statistical analysis due to their
   # proximity to the blind spot)
   if(!all(sapply(getvfcols(), function(loc) all(is.na(vf[,loc])) || is.numeric(vf[,loc])))) {
-    warning("Columns with visual field data are non-numeric")
+    warning("Columns with visual field data are non-numeric", call. = FALSE)
     return(FALSE)
   }
   return(TRUE)
@@ -197,7 +204,7 @@ vfread <- function(file, dateformat = "%Y-%m-%d", eyecodes = c("OD", "OS", "OU")
   vf$eye[vf$eye == eyecodes[3]] <- "OU"
   # reformat date
   vf$date <- as.Date(vf$date, dateformat)
-  if(!vfisvalid(vf)) stop("visual field dataset unfit for analysis with visualFields")
+  if(!vfisvalid(vf)) warning("visual field dataset read with warings. Check the loaded data")
   return(vf)
 }
 
