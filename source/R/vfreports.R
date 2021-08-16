@@ -14,6 +14,8 @@
 vfsfa <- function(vf, file, ...) {
   # always sort by ID, eye, date, and time
   vf <- vfsort(vf)
+  defpar <- par(no.readonly = TRUE) # read default par
+  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
   pdf(file, width = 8.27, height = 11.69)
   par(mar = c(0, 0, 0, 0), ...)
   for(i in 1:nrow(vf)) {
@@ -82,6 +84,8 @@ vfspa <- function(vf, file, type = "td", nperm = factorial(7),
   vf <- vfsort(vf)
   # run regression analyses
   res <- runregressions(vf, type, nperm, trunc, testSlope)
+  defpar <- par(no.readonly = TRUE) # read default par
+  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
   pdf(file, width = 8.27, height = 11.69)
   par(mar = c(0, 0, 0, 0), ...)
   for(i in 1:length(res)) {
@@ -511,6 +515,8 @@ drawcolscalesfa <- function(probs, cols, ...) {
   }
   x <- xini + 1:length(probs)
   y <- rep(0, length(probs))
+  defpar <- par(no.readonly = TRUE) # read default par
+  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
   par(mar = c(0, 0, 0, 0), ...)
   plot(x, y, typ = "n", ann = FALSE, axes = FALSE,
        xlim = c(1, 25), ylim = c(-0.25, 0.25), asp = 1)
@@ -541,6 +547,8 @@ drawcolscalespa <- function(probs, cols, ...) {
   }
   x <- xini + 1:length(probs)
   y <- rep(0, length(probs))
+  defpar <- par(no.readonly = TRUE) # read default par
+  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
   par(mar = c(0, 0, 0, 0), ...)
   plot(x, y, typ = "n", ann = FALSE, axes = FALSE,
        xlim = c(1, 17), ylim = c(-0.25, 0.25), asp = 1)
@@ -604,6 +612,8 @@ drawgi <- function(res, ylab, ...) {
   tickMarks <- c(firstTick, firstTick + 2, firstTick + 4, firstTick + 6)
   tooLarge  <- res$years[res$data > ylim[2]]
   tooSmall  <- res$years[res$data < ylim[1]]
+  defpar <- par(no.readonly = TRUE) # read default par
+  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
   par(plt = c( 0.3, 1, 0.3, 1 ), mgp = c( 1.5, 0.5, 0 ), ...)
   plot(res$years, res$data, type = "n", axes = FALSE, ann = FALSE, xlim = xlim, ylim = ylim, ...)
   axis(1, las = 1, tcl = -0.3, lwd = 0.5, lwd.ticks = 0.5)
@@ -643,6 +653,8 @@ drawhist <- function(res, alternative, ...) {
   ymax <- max(hist(sp, breaks = breaks, plot = FALSE)$density)
   xlim <- c(0, maxsp)
   ylim <- c(0, 1.1 * ymax)
+  defpar <- par(no.readonly = TRUE) # read default par
+  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
   par(plt = c(0, 1, 0.4, 1), mgp = c(0.6, 0.1, 0), ...)
   hist(sp, breaks = breaks, freq = FALSE, main = "", xlim = xlim, ylim = ylim,
        xlab = "", ylab = "", lty = 0, col = colhist, axes = FALSE, ann = FALSE)

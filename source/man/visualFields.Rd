@@ -40,7 +40,7 @@ An enabling tool for clinical visual psychophysics}. Journal of Vision,
 \url{http://people.eng.unimelb.edu.au/aturpin/opi/index.html}
 }
 \author{
-\strong{Maintainer}: Ivan Marin-Franch \email{imarinfr@optocom.es} [reviewer, copyright holder]
+\strong{Maintainer}: Ivan Marín-Franch \email{imarinfr@optocom.es} [reviewer, copyright holder]
 
 Other contributors:
 \itemize{

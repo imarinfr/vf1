@@ -209,6 +209,8 @@ vfplot <- function(vf, type = "td", ...) {
   locs <- getlocini():ncol(vf)
   # left or right eye
   if(vf$eye == "OS") gpar$tess$xlim <- gpar$tess$xlim[2:1]
+  defpar <- par(no.readonly = TRUE) # read default par
+  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
   par(mar = c(0, 0, 0, 0), ...)
   # maximum values for grayscales used in type "s", "tds", and "pds"
   maxdb <- nv$agem$model(vf$age)
@@ -365,6 +367,8 @@ vfplotplr <- function(vf, type = "td", alternative = "LT", xoffs = 0, yoffs = 0,
   } else if(alternative == "both") {
     cols <- getgpar()$progcolmap$b$fun(res$pval)
   } else stop("wrong alternative")
+  defpar <- par(no.readonly = TRUE) # read default par
+  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
   par(mar = c(0, 0, 0, 0), ...)
   plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE, axes = FALSE, asp = 1,
        xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
@@ -436,13 +440,13 @@ vflegoplot <- function(vf, type = "td", grp = 3, ...) {
 #' @export
 vflegoplotsens <- function(gpar, vfb, vfl, maxb, maxl, crad = 2, digits = 1, ...) {
   bs <- getlocmap()$bs
-  ### baseline grayscale
+  # baseline grayscale
   fcolb <- (vfb - gpar$tess$floor) / (maxb - gpar$tess$floor)
   fcolb[fcolb > 1] <- 1
   fcolb[fcolb < 0] <- 0
   fcolb[bs] <- 1   # blind spot
   fcolb <- rgb(fcolb, fcolb, fcolb)
-  ### final grayscale
+  # final grayscale
   fcol <- (vfl - gpar$tess$floor) / (maxl - gpar$tess$floor)
   fcol[fcol > 1] <- 1
   fcol[fcol < 0] <- 0
@@ -463,7 +467,9 @@ vflegoplotsens <- function(gpar, vfb, vfl, maxb, maxl, crad = 2, digits = 1, ...
     fcol  <- fcol[-bs]
     tcol  <- tcol[-bs]
   }
-  ### plot
+  # plot
+  defpar <- par(no.readonly = TRUE) # read default par
+  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
   par(mar = c(0, 0, 0, 0), ...)
   plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE, axes = FALSE, asp = 1,
        xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
@@ -488,9 +494,9 @@ vflegoplotsens <- function(gpar, vfb, vfl, maxb, maxl, crad = 2, digits = 1, ...
 #' @export
 vflegoplotdev <- function(gpar, vfb, devb, devpb, vfl, devl, devpl, crad = 2, digits = 1, ...) {
   bs <- getlocmap()$bs
-  ### baseline colors
+  # baseline colors
   colsb <- gpar$colmap$fun(vfb, devpb)
-  ### final colors
+  # final colors
   colsl <- gpar$colmap$fun(vfl, devpl)
   # values to present
   txt <- round(devl - devb, digits)
@@ -507,7 +513,9 @@ vflegoplotdev <- function(gpar, vfb, devb, devpb, vfl, devl, devpl, crad = 2, di
     colsl <- colsl[-bs]
     tcol  <- tcol[-bs]
   }
-  ### plot
+  # plot
+  defpar <- par(no.readonly = TRUE) # read default par
+  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
   par(mar = c(0, 0, 0, 0), ...)
   plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE, axes = FALSE, asp = 1,
        xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
@@ -573,6 +581,8 @@ vfplotsparklines <- function(vf, type = "td", thr = 2, width = 4,
   suppressWarnings(resmad <- sapply(as.list(y), function(y) mad(lm(y ~ x)$residuals)))
   cols <- rep("#4D4D4D", length(resmad))
   cols[resmad > thr] <- "#FF0000"
+  defpar <- par(no.readonly = TRUE) # read default par
+  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
   if(!add) {
     par(mar = c(0, 0, 0, 0), ...)
     plot(gpar$coord$x, gpar$coord$y, typ = "n",
@@ -598,11 +608,8 @@ vfplotsparklines <- function(vf, type = "td", thr = 2, width = 4,
                   grconvertY(gpar$coord$y, to = "ndc"),
                   grconvertY(gpar$coord$y + height, to = "ndc"))
   }
-  par0 <- par() # get parameters before splitting into pointwise sparkline plots
   for(i in 1:nrow(figs)) {
     par(fig = figs[i,], new = TRUE)
     plot(x, y[,i], type = "l", xlim = xlim, ylim = ylim, axes = FALSE, col = cols[i], ...)
   }
-  # reset back parameters
-  par(fig = par0$fig, fin = par0$fin, pin = par0$pin, usr = par0$usr, xaxp = par0$xaxp, yaxp = par0$yaxp)
 }
