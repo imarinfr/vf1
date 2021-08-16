@@ -64,7 +64,6 @@
 #'     probability levels and returns the corresponding color code.
 #' }
 #' A default color scheme can be generated with \code{vfcolscheme}
-
 #' @param coord print x and y coordinates. Check section
 #'   \code{Structure of graphical parameters} for details
 #' @param tess tesselation for the visual field maps. Check section
@@ -85,6 +84,7 @@
 #' @examples
 #' # generate a structure with default graphical parameters for the 30-2 map
 #' vfgpar(locmaps$p30d2$coord)
+#' @return \code{vfgpar} returns a list with graphical parameters to be used for vfplots
 #' @export
 vfgpar <- function(coord, tess = vftess(coord),
                    probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 0.98, 0.99, 0.995, 1),
@@ -115,6 +115,8 @@ vfgpar <- function(coord, tess = vftess(coord),
 #' @examples
 #' # generate a structure with default tesselation for the 30-2 map
 #' vftess(locmaps$p30d2$coord)
+#' @return \code{vftess} returns a list with the \code{xlim}, \code{ylim}, tessellation tiles and an outer hull
+#' to be used for vfplots
 #' @export
 vftess <- function(coord, floor = 0, delta = 3) {
   # get and expand the convex hull
@@ -132,6 +134,8 @@ vftess <- function(coord, floor = 0, delta = 3) {
 #' @examples
 #' # default color scheme
 #' vfcolscheme()
+#' @return \code{vfcolscheme} returns a list with a lookup table and a function that define the color scheme
+#' to be used for vfplots
 #' @export
 vfcolscheme <- function(probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 0.98, 0.99, 0.995, 1),
                         cols  = c("#000000", colorRampPalette(c("#FF0000", "#FFFF00"))(4),
@@ -159,6 +163,7 @@ vfcolscheme <- function(probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 0.98, 0.99, 
 #' @examples
 #' # default color scheme for progression
 #' vfprogcolscheme()
+#' @return \code{vfprogcolscheme} returns the default \code{vfcolscheme} to be used for vfplots
 #' @export
 vfprogcolscheme <- function(probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 1),
                             cols = c("#000000", colorRampPalette(c("#FF0000", "#FFFF00"))(4),
@@ -199,7 +204,7 @@ vfprogcolscheme <- function(probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 1),
 #' vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "tds")
 #' # hybrid sensitivities and PD values
 #' vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "pds")
-
+#' @return \code{vfplot} No return value
 #' @export
 vfplot <- function(vf, type = "td", ...) {
   if(nrow(vf) != 1) stop("can plot only 1 visual field at a time")
@@ -239,6 +244,7 @@ vfplot <- function(vf, type = "td", ...) {
 #' @param gpar graphical parameters
 #' @param maxval maximum value, typically in dB, for the generation of a grayscale
 #' @param digits digits to round values to plot. Default is 0
+#' @return \code{vfplotsens} No return value
 #' @export
 vfplotsens <- function(gpar, vf, maxval, digits = 0, ...) {
   # background gray shades
@@ -273,6 +279,7 @@ vfplotsens <- function(gpar, vf, maxval, digits = 0, ...) {
 #' @rdname vfplots
 #' @param dev deviation (TD or PD) values
 #' @param devp deviation (TD or PD) probability values
+#' @return \code{vfplotdev} No return value
 #' @export
 vfplotdev <- function(gpar, vf, dev, devp, digits = 0, ...) {
   # background colors and foreground text gray shades
@@ -297,6 +304,7 @@ vfplotdev <- function(gpar, vf, dev, devp, digits = 0, ...) {
 }
 
 #' @rdname vfplots
+#' @return \code{vfplotsdev} No return value
 #' @export
 vfplotsdev <- function(gpar, vf, maxval, dev, devp, digits = 0, ...) {
   # background gray shades
@@ -349,6 +357,7 @@ vfplotsdev <- function(gpar, vf, maxval, dev, devp, digits = 0, ...) {
 #' vfplotplr(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "td")
 #' # PD values
 #' vfplotplr(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
+#' @return \code{vfplotplr} No return value
 #' @export
 vfplotplr <- function(vf, type = "td", alternative = "LT", xoffs = 0, yoffs = 0, ...) {
   res <- plr(vf, type) # if more than 1 ID/eye then it crashes as it should
@@ -398,6 +407,7 @@ vfplotplr <- function(vf, type = "td", alternative = "LT", xoffs = 0, yoffs = 0,
 #' vflegoplot(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "td")
 #' # PD values
 #' vflegoplot(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
+#' @return \code{vflegoplot} No return value
 #' @export
 vflegoplot <- function(vf, type = "td", grp = 3, ...) {
   if(nrow(unique(data.frame(vf$id, vf$eye))) != 1)
@@ -437,6 +447,7 @@ vflegoplot <- function(vf, type = "td", grp = 3, ...) {
 #' @param maxb maximum value for the grayscale at baseline visual field data
 #' @param maxl maximum value for the grayscale for last visual field data
 #' @param crad radius of the circle in the legoplot
+#' @return \code{vflegoplotsens} No return value
 #' @export
 vflegoplotsens <- function(gpar, vfb, vfl, maxb, maxl, crad = 2, digits = 1, ...) {
   bs <- getlocmap()$bs
@@ -491,6 +502,7 @@ vflegoplotsens <- function(gpar, vfb, vfl, maxb, maxl, crad = 2, digits = 1, ...
 #' @param devpb baseline visual field (TD or PD) deviation probability values
 #' @param devl last visual field (TD or PD) deviation values
 #' @param devpl last visual field (TD or PD) deviation probability values
+#' @return \code{vflegoplotdev} No return value
 #' @export
 vflegoplotdev <- function(gpar, vfb, devb, devpb, vfl, devl, devpl, crad = 2, digits = 1, ...) {
   bs <- getlocmap()$bs
@@ -552,6 +564,7 @@ vflegoplotdev <- function(gpar, vfb, devb, devpb, vfl, devl, devpl, crad = 2, di
 #' vfplotsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "td")
 #' # PD values
 #' vfplotsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
+#' @return \code{vfplotsparklines} No return value
 #' @export
 vfplotsparklines <- function(vf, type = "td", thr = 2, width = 4,
                              height = 2, add = FALSE, ...) {

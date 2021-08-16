@@ -16,7 +16,7 @@
 \alias{getgh}
 \alias{getgl}
 \alias{getglp}
-\title{Visual field datasets, and management and processing functions}
+\title{Visual field dataset}
 \usage{
 vfdesc(vf)
 
@@ -90,6 +90,37 @@ Default is `\code{last}`.}
 \item{pd}{pattern-deviation (PD) values}
 
 \item{g}{global indices}
+}
+\value{
+\code{vfdesc} returns descriptive statistics of a visual field dataset
+
+\code{vfsort} returns a sorted visual field dataset
+
+\code{vfisvalid} returns \code{TRUE} or \code{FALSE}
+
+\code{vfread} returns a visual field dataset
+
+\code{vfwrite} No return value
+
+\code{vfjoin} returns a visual field dataset
+
+\code{vffilter} returns a visual field dataset
+
+\code{vfselect} returns a visual field dataset
+
+\code{gettd} returns a visual field dataset with total deviation values
+
+\code{gettdp} returns a visual field dataset with total deviation probability values
+
+\code{getpd} returns a visual field dataset with pattern deviation values
+
+\code{getpdp} returns a visual field dataset with pattern deviation probability values
+
+\code{getgh} returns the general height of visual fields tests
+
+\code{getgl} returns visual fields global indices
+
+\code{getglp} returns probability values of visual fields global indices
 }
 \description{
 The main object of the visualFields package is a table with 

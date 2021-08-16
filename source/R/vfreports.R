@@ -10,6 +10,7 @@
 #' @param vf visual field data
 #' @param file The pdf file name where to save the one-page reports of single field analysis
 #' @param ... other graphical arguments
+#' @return No return value
 #' @export
 vfsfa <- function(vf, file, ...) {
   # always sort by ID, eye, date, and time
@@ -72,6 +73,7 @@ vfsfa <- function(vf, file, ...) {
 #' of testSlope must be 1 or equal to the number of locations to be used in the PLR
 #' or PoPLR analysis
 #' @param ... other graphical arguments
+#' @return No return value
 #' @references
 #' N. O'Leary, B. C. Chauhan, and P. H. Artes. \emph{Visual field progression in
 #' glaucoma: estimating the overall significance of deterioration with permutation

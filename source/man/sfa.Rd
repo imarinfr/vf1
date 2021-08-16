@@ -16,6 +16,9 @@ vfsfashiny(vf, ...)
 
 \item{...}{other graphical arguments}
 }
+\value{
+No return value
+}
 \description{
 Generates of one-page reports of single field analyses
 }

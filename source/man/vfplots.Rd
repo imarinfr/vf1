@@ -182,6 +182,35 @@ Default is `\code{2}` (dB)}
 \item{add}{whether to generate a new plot (`\code{FALSE}`, as default)
 or to add to an existing figure (`\code{TRUE}`)}
 }
+\value{
+\code{vfgpar} returns a list with graphical parameters to be used for vfplots
+
+\code{vftess} returns a list with the \code{xlim}, \code{ylim}, tessellation tiles and an outer hull
+to be used for vfplots
+
+\code{vfcolscheme} returns a list with a lookup table and a function that define the color scheme
+to be used for vfplots
+
+\code{vfprogcolscheme} returns the default \code{vfcolscheme} to be used for vfplots
+
+\code{vfplot} No return value
+
+\code{vfplotsens} No return value
+
+\code{vfplotdev} No return value
+
+\code{vfplotsdev} No return value
+
+\code{vfplotplr} No return value
+
+\code{vflegoplot} No return value
+
+\code{vflegoplotsens} No return value
+
+\code{vflegoplotdev} No return value
+
+\code{vfplotsparklines} No return value
+}
 \description{
 Graphical tools for visualization and statistical analysis of
 visual fields.

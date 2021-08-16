@@ -100,6 +100,7 @@
 #'   "SITA standard". Default is blank
 #' @param size stimulus size, if the same size was used for all visual field
 #'   locations or empty (default)
+#' @return \code{nvgenerate} returns a list with normative values
 #' @export
 nvgenerate <- function(vf, method = "pointwise",
                        probs     = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 0.98, 0.99, 0.995, 1),
@@ -164,6 +165,8 @@ nvgenerate <- function(vf, method = "pointwise",
 
 #' @rdname nv
 #' @param vf visual field data with sensitivity values
+#' @return \code{agelm} returns a list with coefficients and a function defining
+#' a linear age model
 #' @export
 agelm <- function(vf) {
   # get weights so that each subject is counted the same as the rest
@@ -183,20 +186,21 @@ agelm <- function(vf) {
 
 #' @rdname nv
 #' @param agem age model to construct the function to obtain TD values
+#' @return \code{tddef} returns a function for the computation of TD values
 #' @export
-tddef <- function(agem) {
+tddef <- function(agem)
   return(as.function(alist(vf = , {
     vf[,getvfcols()] <- vf[,getvfcols()] - agem$model(vf$age)
     return(vf)
   })))
-}
 
 #' @rdname nv
 #' @param perc the percentile to obtain the ranked TD value as
 #' reference for the general height (GH) of the visual field.
 #' Default is the 85th percentile, thus \code{0.85}
+#' @return \code{ghdef} returns a function for the computation of the general height
 #' @export
-ghdef <- function(perc = 0.85) {
+ghdef <- function(perc = 0.85)
   as.function(alist(td = , {
     # get on the TD values and remove all other information columns
     td <- td[,getvfcols()]
@@ -209,22 +213,23 @@ ghdef <- function(perc = 0.85) {
     ### fixed if perc = 0.86
     return(as.numeric(apply(td, 1, sort, decreasing = TRUE)[pos,]))
   }))
-}
 
 #' @rdname nv
 #' @param ghfun function used for determination of the GH and PD values
+#' @return \code{pddef} returns a function for the computation of PD values
 #' @export
-pddef <- function(ghfun = ghdef(0.85)) {
+pddef <- function(ghfun = ghdef(0.85))
   return(as.function(alist(td = , {
     td[,getvfcols()] <- td[,getvfcols()] - ghfun(td)
     return(td)
   })))
-}
 
 #' @rdname nv
 #' @param type type of estimation for the weighted quantile values. See
 #'   \code{\link{wtd.quantile}} for details. Default is `\code{quantile}`
 #' @param ... arguments to be passed to or from methods
+#' @return \code{lutdef} returns a look up table and a function for the
+#' computation of the probability values for TD and PD
 #' @export
 lutdef <- function(vf, probs, type = "quantile", ...) {
   counts <- table(vf$id)
@@ -257,6 +262,7 @@ lutdef <- function(vf, probs, type = "quantile", ...) {
 #' @rdname nv
 #' @param sdtd standard deviations obtained for TD values
 #' @param sdpd standard deviations obtained for PD values
+#' @return \code{gdef} returns a function to compute global indices
 #' @export
 gdef <- function(agem, sdtd, sdpd) {
   coord <- getlocmap()$coord
@@ -301,6 +307,8 @@ gdef <- function(agem, sdtd, sdpd) {
 
 #' @rdname nv
 #' @param g a table with global indices
+#' @return \code{lutgdef} returns a look up table and a function for the
+#' computation of the probability values for global indices
 #' @export
 lutgdef <- function(g, probs, type = "quantile", ...) {
   # CARE the g in the parent and child functions are

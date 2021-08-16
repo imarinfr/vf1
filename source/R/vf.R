@@ -1,5 +1,5 @@
 #' @rdname vf
-#' @title Visual field datasets, and management and processing functions
+#' @title Visual field dataset
 #' @description The main object of the visualFields package is a table with 
 #' a specific format and fields that are mandatory for their management and
 #' processing (mainly statistical analysis). Each record (row) in the table
@@ -120,6 +120,7 @@
 #' g   <- getgl(vf)  # get global indices
 #' gp  <- getglp(g)  # get global indices probability values
 #' @param vf visual field dataset
+#' @return \code{vfdesc} returns descriptive statistics of a visual field dataset
 #' @export
 vfdesc <- function(vf) {
   summary(vf) # PLACEHOLDER. TO BE REPLACED
@@ -129,12 +130,14 @@ vfdesc <- function(vf) {
 #' @param decreasing sort decreasing or increasing?
 #' Default is increasing, that is \code{decreasing = FALSE}
 #' @param ... arguments to be passed to or from methods
+#' @return \code{vfsort} returns a sorted visual field dataset
 #' @export
 vfsort <- function(vf, decreasing = FALSE)
   return(vf[order(vf$id, vf$eye, vf$date, vf$time, decreasing = decreasing),])
 
 #' @rdname vf
 #' @param vf visual field data
+#' @return \code{vfisvalid} returns \code{TRUE} or \code{FALSE}
 #' @export
 vfisvalid <- function(vf) {
   # check mandatory fields exist and have the correct format
@@ -195,6 +198,7 @@ vfisvalid <- function(vf) {
 #' \code{eyecodes} should be equal to `\code{c("OD", "OS")}` or `\code{c("R", "L")}`.
 #'   By default it is `\code{eyecodes = c("OD", "OS", "OU")}`
 #' @param ... arguments to be passed to or from methods
+#' @return \code{vfread} returns a visual field dataset
 #' @export
 vfread <- function(file, dateformat = "%Y-%m-%d", eyecodes = c("OD", "OS", "OU"), ...) {
   vf <- read.csv(file, stringsAsFactors = FALSE, ...)
@@ -210,6 +214,7 @@ vfread <- function(file, dateformat = "%Y-%m-%d", eyecodes = c("OD", "OS", "OU")
 
 #' @rdname vf
 #' @param file the name of the csv file where to write the data
+#' @return \code{vfwrite} No return value
 #' @export
 vfwrite <- function(vf, file, dateformat = "%Y-%m-%d", eyecodes = c("OD", "OS", "OU"), ...) {
   # change date format and eye codes
@@ -222,6 +227,7 @@ vfwrite <- function(vf, file, dateformat = "%Y-%m-%d", eyecodes = c("OD", "OS", 
 
 #' @rdname vf
 #' @param vf1,vf2 the two visual field data objects to join or merge
+#' @return \code{vfjoin} returns a visual field dataset
 #' @export
 vfjoin <- function(vf1, vf2) {
   # join rows of info tables together
@@ -233,6 +239,7 @@ vfjoin <- function(vf1, vf2) {
 }
 
 #' @rdname vf
+#' @return \code{vffilter} returns a visual field dataset
 #' @export
 vffilter <- function(vf, ...) return(vfsort(return(filter(vf, ...))))
 
@@ -243,6 +250,7 @@ vffilter <- function(vf, ...) return(vfsort(return(filter(vf, ...))))
 #'   Default is `\code{last}`.
 #' @param n number of visits to select. Default value is 1, but it is ignored if
 #'   \code{sel} is an index array
+#' @return \code{vfselect} returns a visual field dataset
 #' @export
 vfselect <- function(vf, sel = "last", n = 1) {
   if(is.numeric(sel)) {
@@ -275,6 +283,7 @@ vfselect <- function(vf, sel = "last", n = 1) {
 }
 
 #' @rdname vf
+#' @return \code{gettd} returns a visual field dataset with total deviation values
 #' @export
 gettd <- function(vf) {
   if(!vfisvalid(vf)) stop("cannot compute TD values")
@@ -283,6 +292,7 @@ gettd <- function(vf) {
 
 #' @rdname vf
 #' @param td total-deviation (TD) values
+#' @return \code{gettdp} returns a visual field dataset with total deviation probability values
 #' @export
 gettdp <- function(td) {
   if(!vfisvalid(td)) stop("cannot compute TD probability values")
@@ -290,6 +300,7 @@ gettdp <- function(td) {
 }
 
 #' @rdname vf
+#' @return \code{getpd} returns a visual field dataset with pattern deviation values
 #' @export
 getpd <- function(td) {
   if(!vfisvalid(td)) stop("cannot compute PD values")
@@ -298,6 +309,7 @@ getpd <- function(td) {
 
 #' @rdname vf
 #' @param pd pattern-deviation (PD) values
+#' @return \code{getpdp} returns a visual field dataset with pattern deviation probability values
 #' @export
 getpdp <- function(pd) {
   if(!vfisvalid(pd)) stop("cannot compute PD probability values")
@@ -305,6 +317,7 @@ getpdp <- function(pd) {
 }
 
 #' @rdname vf
+#' @return \code{getgh} returns the general height of visual fields tests
 #' @export
 getgh <- function(td) {
   if(!vfisvalid(td)) stop("cannot compute the general height (GH)")
@@ -312,6 +325,7 @@ getgh <- function(td) {
 }
 
 #' @rdname vf
+#' @return \code{getgl} returns visual fields global indices
 #' @export
 getgl <- function(vf) {
   if(!vfisvalid(vf)) stop("cannot compute global indices")
@@ -325,7 +339,7 @@ getgl <- function(vf) {
 
 #' @rdname vf
 #' @param g global indices
+#' @return \code{getglp} returns probability values of visual fields global indices
 #' @export
-getglp <- function(g) {
+getglp <- function(g)
   return(getnv()$glpfun(g))
-}

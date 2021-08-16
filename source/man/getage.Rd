@@ -11,6 +11,9 @@ getage(dob, date)
 
 \item{date}{date(s) for which to calculate age}
 }
+\value{
+\code{getage} returns the age from the date of birth and a certain date
+}
 \description{
 Computes ages at specific dates
 }

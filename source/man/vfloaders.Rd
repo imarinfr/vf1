@@ -3,6 +3,7 @@
 \name{loadhfaxml}
 \alias{loadhfaxml}
 \alias{loadhfadicom}
+\alias{loadoctopus}
 \alias{loadhfaxmlbatch}
 \alias{loadhfadicombatch}
 \title{Loaders from perimeters}
@@ -11,25 +12,24 @@ loadhfaxml(file, type = "pwg", repeated = mean)
 
 loadhfadicom(file, type = "pwg", repeated = mean)
 
+loadoctopus(file, type = "pwg", repeated = mean, dateFormat = "\%d.\%m.\%Y")
+
 loadhfaxmlbatch(file, repeated = mean)
 
 loadhfadicombatch(file, repeated = mean)
 }
 \arguments{
-\item{file}{file to load (it is a XML extracted with the export license for
-the HFA loader), a CSV outputed by the Eyesuite software for the Octopus
-perimeter and a CSV with two columns for the batch HFA loader. The two columns
-for the batch HFA loader must be named `\code{file}` and `\code{type}` and must
-have the full file name (file path + name) of each XML file to be loaded and the
-corresponding patient type, respectively}
+\item{file}{name of the csv file exported by the eyesuite software}
 
 \item{type}{type of patient. It can be `\code{ctr}` (for control or healthy
 subject-eye) or `\code{pwg}` (for patient with glaucoma) or other}
 
 \item{repeated}{function to apply if there are repeated values in a particular location}
+
+\item{dateFormat}{format to be used for date. Its default value is \%d.\%m.\%Y}
 }
 \value{
-visual field data
+Visual field data
 }
 \description{
 Functions to load from commercial perimeters
@@ -39,10 +39,9 @@ The XML loader for the Humphrery Field Analyser (HFA) by Carl Zeiss Meditec
 is essentially a XML parser that reads in the XML generated with the scientific
 export license. The DICOMM loader is also a parser to read HFA data generated in a
 DICOMM file. The loader for the Octopus perimeter by Haag-Streit is a csv reader
-from files generated with the Eyesuite software
+from files generated with the Eyesuite software. The parser also extracts information
+on visual field pattern deviation values and normative values. The list that is returned
+with the \code{loadoctopus} loader contains data frames which are structured with keys so that
+redundancy is minimized (similar to a relational database). Detailed examples for
+\code{loadoctopus}: \url{https://rpubs.com/huchzi/645357}
 }
-\seealso{
-Other vfloaders: 
-\code{\link{loadoctopus}()}
-}
-\concept{vfloaders}

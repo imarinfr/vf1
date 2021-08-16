@@ -29,17 +29,17 @@
 #' @param bs locations that should be excluded from statistical analysis because
 #'   of their proximity to the blind spot
 #' @param ... arguments to be passed to or from methods
+#' @return \code{locread} a list with information about a location map
 #' @export
-locread <- function(file, name = "", desc = "", bs = numeric(), ...) {
+locread <- function(file, name = "", desc = "", bs = numeric(), ...)
   return(list(name  = name,
               desc  = desc,
               coord = read.csv(file, stringsAsFactors = FALSE, ...),
               bs    = bs))
-}
 
 #' @rdname locmap
 #' @param locmap location map from which to get coordinates to export as csv file
+#' @return \code{locwrite} No return value
 #' @export
-locwrite <- function(locmap, file, ...) {
+locwrite <- function(locmap, file, ...)
   write.csv(locmap$coord, file, row.names = FALSE, ...)
-}

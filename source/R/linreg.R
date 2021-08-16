@@ -297,7 +297,7 @@ poplrpvals <- function(vf, years, porder, testSlope = 0) {
   int[,invariantloc] <- vf[1,invariantloc]
   se[,invariantloc] <- precision
   # Get t-values and the corresponding p-values
-  tval <- (sl - t(matrix(rep(testSlope, nloc * nperm), nloc, nperm))) / se
+  tval <- (sl - t(matrix(rep(testSlope, nperm), nloc, nperm))) / se
   pval <- pt(tval, nvisits - 2)
   pval[pval < precision] <- precision
   pval[pval > (1 - precision)] <- 1 - precision

@@ -36,26 +36,24 @@ is type of quantile calculation `\code{type}` use in \code{\link{quantile}}}
 Default value is \code{0.1}}
 }
 \value{
-a list with the following elements:
+\code{vfaggregate} and \code{vfmean} return a vf data frame with aggregate values
+
+\code{vfretestdist} returns a list with the following elements:
 \itemize{
-  \item{The function \code{vfretestdist} returns a list with the following fields:
-    \itemize{
-      \item\code{x} with all the test values (x-axis)
-      \item\code{y} the distribution of retest dB values conditional to each
-        test value in \code{x}. It is a list with as many entries as \code{x}
-      \item\code{n} number of retest values conditional to each value in \code{x}.
-        It is a list with as many entries as \code{x}
-      \item\code{ymed} median for each value in \code{x}. It is a list with as
-        many entries as \code{x}
-      \item\code{ylow} quantile value for significance \code{1 - alpha / 2}
-        for each value in \code{x}. It is a list with as many entries as \code{x}
-      \item\code{yup} quantile value for significance \code{alpha / 2}
-        for each value in \code{x}. It is a list with as many entries as \code{x}
-    }
-    Together \code{ylow} and \code{yup} represent the lower and upper limit of the
-    \code{(1 - alpha)\%} confidence intervals at each value \code{x}.
-  }
+  \item\code{x} with all the test values (x-axis)
+  \item\code{y} the distribution of retest dB values conditional to each
+  test value in \code{x}. It is a list with as many entries as \code{x}
+  \item\code{n} number of retest values conditional to each value in \code{x}.
+  It is a list with as many entries as \code{x}
+  \item\code{ymed} median for each value in \code{x}. It is a list with as
+  many entries as \code{x}
+  \item\code{ylow} quantile value for significance \code{1 - alpha / 2}
+  for each value in \code{x}. It is a list with as many entries as \code{x}
+  \item\code{yup} quantile value for significance \code{alpha / 2}
+  for each value in \code{x}. It is a list with as many entries as \code{x}
 }
+Together \code{ylow} and \code{yup} represent the lower and upper limit of the
+\code{(1 - alpha)\%} confidence intervals at each value \code{x}.
 }
 \description{
 \itemize{

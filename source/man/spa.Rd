@@ -46,6 +46,9 @@ or PoPLR analysis}
 
 \item{...}{other graphical arguments}
 }
+\value{
+No return value
+}
 \description{
 Generation of one-page reports of series progression analyses
 \itemize{

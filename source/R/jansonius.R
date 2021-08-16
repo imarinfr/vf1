@@ -59,7 +59,6 @@
 #' Structure-Function Analysis of the Macular Region}. 
 #' Translational Vision Science and Technology,
 #' 9(10):15, 2020
-#' 
 #' @examples
 #' # get ganglion-cell soma locations from visual field locations
 #' vf2gc(locmaps$p10d2$coord)
@@ -84,6 +83,7 @@
 #' # obtain first the 
 #' psi2oct(loc2psi(vf2gc(locmaps$p10d2$coord)))
 #' @param coord coordinates of locations in the visual field
+#' @return \code{cart2jpolar}: returns the Jansonius modified polar coordinates
 #' @export
 cart2jpolar <- function(coord) {
   x  <- coord[,1]
@@ -99,6 +99,7 @@ cart2jpolar <- function(coord) {
 #' @rdname jansonius
 #' @param rpsi visual field locations in polar coordinates of the
 #'   distorted space of the Jansonius map
+#' @return \code{jpolar2cart}: returns Cartesian coordinates
 #' @export
 jpolar2cart <- function(rpsi) {
   r   <- rpsi[,1]
@@ -117,6 +118,7 @@ jpolar2cart <- function(rpsi) {
 #' @param psi0 angle of incidence at the ONH
 #' @param r0 radius of the ONH. Its default value is \code{4}.
 #'   Changing it changes the calculated average bundle paths.
+#' @return \code{bundlePath}: returns a function describing a retinal ganglion cell bundle path
 #' @export
 bundlePath <- function(psi0, r0 = 4) {
   if(!(is.atomic(psi0) && length(psi0) == 1L) ||
@@ -148,6 +150,7 @@ bundlePath <- function(psi0, r0 = 4) {
 #' @rdname jansonius
 #' @param diam diamater in degrees of visual angle of the OCT circular
 #'   scan centered at the center of the ONH
+#' @return \code{loc2psi}: returns the angle of incidence on the ONH
 #' @export
 loc2psi <- function(coord, r0 = 4) {
   coord[,2] <- -coord[,2]
@@ -161,6 +164,7 @@ loc2psi <- function(coord, r0 = 4) {
 }
 
 #' @rdname jansonius
+#' @return \code{psi2oct}: returns the corresponding angle in the OCT circular scan
 #' @export
 psi2oct <- function(psi0, diam = 12) {
   radius <- diam / 2
@@ -177,6 +181,8 @@ psi2oct <- function(psi0, diam = 12) {
 
 #' @rdname jansonius
 #' @param angle fovea-disc angle in degrees
+#' @return \code{vf2gc}: returns the ganglion cell soma corresponding to the photoreceptors
+#'                       of a visual field location
 #' @export
 vf2gc <- function(coord, angle = 0) {
   Drasdo_LUT <- visualFields::drasdolut$Drasdo_LUT

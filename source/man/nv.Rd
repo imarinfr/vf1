@@ -75,6 +75,26 @@ Default is the 85th percentile, thus \code{0.85}}
 
 \item{g}{a table with global indices}
 }
+\value{
+\code{nvgenerate} returns a list with normative values
+
+\code{agelm} returns a list with coefficients and a function defining
+a linear age model
+
+\code{tddef} returns a function for the computation of TD values
+
+\code{ghdef} returns a function for the computation of the general height
+
+\code{pddef} returns a function for the computation of PD values
+
+\code{lutdef} returns a look up table and a function for the
+computation of the probability values for TD and PD
+
+\code{gdef} returns a function to compute global indices
+
+\code{lutgdef} returns a look up table and a function for the
+computation of the probability values for global indices
+}
 \description{
 Functions to generate and handle normative values. Check section
 \code{Structure of normative values} below for details about how to generate

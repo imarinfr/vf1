@@ -23,6 +23,11 @@ of their proximity to the blind spot}
 
 \item{locmap}{location map from which to get coordinates to export as csv file}
 }
+\value{
+\code{locread} a list with information about a location map
+
+\code{locwrite} No return value
+}
 \description{
 Functions to handle location maps, which are lists with x and y
 coordinates and other importan information about the visual field test

@@ -37,10 +37,10 @@ An enabling tool for clinical visual psychophysics}. Journal of Vision,
 }
 \seealso{
 \code{OPI}: the Open Perimetry Initiative
-\url{http://people.eng.unimelb.edu.au/aturpin/opi/index.html}
+\url{https://people.eng.unimelb.edu.au/aturpin/opi/index.html}
 }
 \author{
-\strong{Maintainer}: Ivan Marín-Franch \email{imarinfr@optocom.es} [reviewer, copyright holder]
+\strong{Maintainer}: Ivan Marin-Franch \email{imarinfr@optocom.es} [reviewer, copyright holder]
 
 Other contributors:
 \itemize{

@@ -18,7 +18,7 @@
 #' This work was supported by the NIH grant number \bold{R01EY007716} and 
 #' the Veterans Administration grant number \bold{I01 RX-001821-01A1}.
 #' @seealso \code{OPI}: the Open Perimetry Initiative
-#' \url{http://people.eng.unimelb.edu.au/aturpin/opi/index.html}
+#' \url{https://people.eng.unimelb.edu.au/aturpin/opi/index.html}
 #' @references
 #' Marín-Franch I & Swanson WH. \emph{The visualFields package: A tool for
 #' analysis and visualization of visual fields}. Journal of Vision, 2013,
@@ -97,6 +97,7 @@
 #' setlocini(15)
 #' getvfcols() # get columns with visual fields data
 #' setdefaults() # return back to defaults
+#' @return \code{setdefaults}: No return value
 #' @export
 setdefaults <- function() {
   setlocini(11)                             # set starting location for visual fields data
@@ -106,11 +107,13 @@ setdefaults <- function() {
 }
 
 #' @rdname vfenv
+#' @return \code{getnv}: Returns the normative value currently in used by visualFields
 #' @export
 getnv <- function() return(.vfenv$nv)
 
 #' @rdname vfenv
-#' @param nv normative valuess to to set in the visualFields environment
+#' @param nv normative values to to set in the visualFields environment
+#' @return \code{setnv}: No return value
 #' @export
 setnv <- function(nv) {
   if(is.null(nv)) stop("normative values input is null")
@@ -118,11 +121,13 @@ setnv <- function(nv) {
 }
 
 #' @rdname vfenv
+#' @return \code{getgpar}: Returns the graphical parameters currently in used by visualFields
 #' @export
 getgpar <- function() return(.vfenv$gpar)
 
 #' @rdname vfenv
 #' @param gpar structure with all graphical parameters
+#' @return \code{setgpar}: No return value
 #' @export
 setgpar <- function(gpar) {
   if(is.null(gpar)) stop("graphical parameters input is null")
@@ -130,11 +135,13 @@ setgpar <- function(gpar) {
 }
 
 #' @rdname vfenv
+#' @return \code{getlocmap}: Returns the location map currently in used by visualFields
 #' @export
 getlocmap <- function() return(.vfenv$locmap)
 
 #' @rdname vfenv
 #' @param locmap location map to to set in the visualFields environment
+#' @return \code{setlocmap}: No return value
 #' @export
 setlocmap <- function(locmap) {
   if(is.null(locmap)) stop("location map input is null")
@@ -142,11 +149,13 @@ setlocmap <- function(locmap) {
 }
 
 #' @rdname vfenv
+#' @return \code{getlocini}: Returns the column where visual field data starts
 #' @export
 getlocini <- function() return(.vfenv$locini)
 
 #' @rdname vfenv
 #' @param locini column from where to start reading the visual field data
+#' @return \code{setlocini}: No return value
 #' @export
 setlocini <- function(locini = 11) {
   if(is.null(locini)) stop("locini input is null")
@@ -154,6 +163,7 @@ setlocini <- function(locini = 11) {
 }
 
 #' @rdname vfenv
+#' @return \code{getvfcols}: Returns the columns with visual field data
 #' @export
 getvfcols <- function() return(getlocini() - 1 + 1:nrow(getlocmap()$coord))
 

@@ -37,6 +37,20 @@ scan centered at the center of the ONH}
 
 \item{angle}{fovea-disc angle in degrees}
 }
+\value{
+\code{cart2jpolar}: returns the Jansonius modified polar coordinates
+
+\code{jpolar2cart}: returns Cartesian coordinates
+
+\code{bundlePath}: returns a function describing a retinal ganglion cell bundle path
+
+\code{loc2psi}: returns the angle of incidence on the ONH
+
+\code{psi2oct}: returns the corresponding angle in the OCT circular scan
+
+\code{vf2gc}: returns the ganglion cell soma corresponding to the photoreceptors
+                      of a visual field location
+}
 \description{
 Generates a function that renders the average path of
 a nerve fiber bundle that exits through the optic nerve head (ONH)

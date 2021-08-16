@@ -34,13 +34,34 @@ setlocini(locini = 11)
 getvfcols()
 }
 \arguments{
-\item{nv}{normative valuess to to set in the visualFields environment}
+\item{nv}{normative values to to set in the visualFields environment}
 
 \item{gpar}{structure with all graphical parameters}
 
 \item{locmap}{location map to to set in the visualFields environment}
 
 \item{locini}{column from where to start reading the visual field data}
+}
+\value{
+\code{setdefaults}: No return value
+
+\code{getnv}: Returns the normative value currently in used by visualFields
+
+\code{setnv}: No return value
+
+\code{getgpar}: Returns the graphical parameters currently in used by visualFields
+
+\code{setgpar}: No return value
+
+\code{getlocmap}: Returns the location map currently in used by visualFields
+
+\code{setlocmap}: No return value
+
+\code{getlocini}: Returns the column where visual field data starts
+
+\code{setlocini}: No return value
+
+\code{getvfcols}: Returns the columns with visual field data
 }
 \description{
 Functions to set and get settings in the visualField environment

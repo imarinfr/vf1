@@ -3,6 +3,7 @@
 #' @description Computes ages at specific dates
 #' @param dob date(s) of birth
 #' @param date date(s) for which to calculate age
+#' @return \code{getage} returns the age from the date of birth and a certain date
 #' @examples
 #' getage("1977-01-31", "2014-01-30")
 #' @export
@@ -39,30 +40,11 @@ getage <- function(dob, date)  {
 #'     and date). If the aggregate grouping is by \code{eye} and the function, then
 #'     the \code{date} returned is the average.
 #' }
-#' @return a list with the following elements:
-#' \itemize{
-#'   \item{The function \code{vfretestdist} returns a list with the following fields:
-#'     \itemize{
-#'       \item\code{x} with all the test values (x-axis)
-#'       \item\code{y} the distribution of retest dB values conditional to each
-#'         test value in \code{x}. It is a list with as many entries as \code{x}
-#'       \item\code{n} number of retest values conditional to each value in \code{x}.
-#'         It is a list with as many entries as \code{x}
-#'       \item\code{ymed} median for each value in \code{x}. It is a list with as
-#'         many entries as \code{x}
-#'       \item\code{ylow} quantile value for significance \code{1 - alpha / 2}
-#'         for each value in \code{x}. It is a list with as many entries as \code{x}
-#'       \item\code{yup} quantile value for significance \code{alpha / 2}
-#'         for each value in \code{x}. It is a list with as many entries as \code{x}
-#'     }
-#'     Together \code{ylow} and \code{yup} represent the lower and upper limit of the
-#'     \code{(1 - alpha)\%} confidence intervals at each value \code{x}.
-#'   }
-#' }
 #' @param by aggregate by \code{date}, that is by id, eye, and date (default) or by
 #'   \code{eye}, that is by id and eye
 #' @param fun a function to compute the summary statistics which can be applied to
 #'   all data subsets. The default is `\code{mean}`
+#' @return \code{vfaggregate} and \code{vfmean} return a vf data frame with aggregate values
 #' @examples
 #' # aggregate by date
 #' vfaggregate(vfpwgRetest24d2, by = "date")           # compute the mean
@@ -132,6 +114,22 @@ vfmean <- function(vf, by = "date", ...) return(vfaggregate(vf, by, fun = mean, 
 #' Default value is \code{0.1}
 #' @param ... arguments to be passed to or from methods. A useful one to try
 #' is type of quantile calculation `\code{type}` use in \code{\link{quantile}}
+#' @return \code{vfretestdist} returns a list with the following elements:
+#' \itemize{
+#'   \item\code{x} with all the test values (x-axis)
+#'   \item\code{y} the distribution of retest dB values conditional to each
+#'   test value in \code{x}. It is a list with as many entries as \code{x}
+#'   \item\code{n} number of retest values conditional to each value in \code{x}.
+#'   It is a list with as many entries as \code{x}
+#'   \item\code{ymed} median for each value in \code{x}. It is a list with as
+#'   many entries as \code{x}
+#'   \item\code{ylow} quantile value for significance \code{1 - alpha / 2}
+#'   for each value in \code{x}. It is a list with as many entries as \code{x}
+#'   \item\code{yup} quantile value for significance \code{alpha / 2}
+#'   for each value in \code{x}. It is a list with as many entries as \code{x}
+#' }
+#' Together \code{ylow} and \code{yup} represent the lower and upper limit of the
+#' \code{(1 - alpha)\%} confidence intervals at each value \code{x}.
 #' @examples
 #' # get the retest sensitivity data after removing the blind spot
 #' retest <- vfretestdist(vfpwgRetest24d2, nbase = 1, nfollow = 1)
