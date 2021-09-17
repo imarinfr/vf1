@@ -208,7 +208,7 @@ vfread <- function(file, dateformat = "%Y-%m-%d", eyecodes = c("OD", "OS", "OU")
   vf$eye[vf$eye == eyecodes[3]] <- "OU"
   # reformat date
   vf$date <- as.Date(vf$date, dateformat)
-  if(!vfisvalid(vf)) warning("visual field dataset read with warings. Check the loaded data")
+  if(!vfisvalid(vf)) warning("visual field dataset read with warnings. Check the loaded data")
   return(vf)
 }
 
