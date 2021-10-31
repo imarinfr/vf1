@@ -327,7 +327,7 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
       locMatrix$xod <- -locMatrix$xod
     
     # order locmap
-    locMatrix <- locMatrix[order(locMatrix$xod, locMatrix$yod), ]
+    locMatrix <- locMatrix[order(locMatrix$yod, locMatrix$xod, descending = c(TRUE, FALSE)), ]
     
     # give each location a key
     locMatrix$loc_ID <- 1:nrow(locMatrix)
