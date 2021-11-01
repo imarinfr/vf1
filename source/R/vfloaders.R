@@ -327,7 +327,7 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
       locMatrix$xod <- -locMatrix$xod
     
     # order locmap
-    locMatrix <- locMatrix[order(locMatrix$yod, locMatrix$xod, descending = c(TRUE, FALSE)), ]
+    locMatrix <- locMatrix[order(locMatrix$yod, locMatrix$xod, decreasing = c(TRUE, FALSE)), ]
     
     # give each location a key
     locMatrix$loc_ID <- 1:nrow(locMatrix)
@@ -375,7 +375,7 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
       lmap <- list()
       vft <- resultList$vf_types[resultList$vf_types$vfID == vf_id, c("pattern", "locnum")]
       lmap$name <- paste(vft$pattern, vft$locnum)
-      lmap$desc <- "This locmap was automatically created from the csv exported by Eyesuite. NB: The locations are not numbered according to the standard!"
+      lmap$desc <- "This locmap was automatically created from the csv exported by Eyesuite."
       lmap$coord <- resultList$locmap[[vf_id]][, c("xod", "yod")]
       names(lmap$coord) <- c("x", "y")
       return(lmap)
