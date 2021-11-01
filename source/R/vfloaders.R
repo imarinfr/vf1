@@ -366,6 +366,16 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
            function(vf_type) { vf_list <- defects[vf_index == vf_type]; rv <- t(sapply(vf_list, c)); return(rv)}
     )
   
+  # extract the norm_values
+  norm_values <- lapply(locations, 
+                    function (mt) { rv <- mt$norm; names(rv) <- paste0("l", mt$loc_ID); return(rv) }
+  )
+  
+  resultList$norm_values <- 
+    lapply(unique(vf_index), 
+           function(vf_type) { vf_list <- norm_values[vf_index == vf_type]; rv <- t(sapply(vf_list, c)); return(rv)}
+    )
+  
   # extract other properties
   resultList$fields <- dat[, c("id", "eye", "date", "time", "age", "type", "fpr", "fnr", "fl", "vfID")]
   
@@ -390,6 +400,12 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
   resultList$get_defects <-
     function(vf_id) {
       rv <- cbind(resultList$fields[resultList$fields$vfID == vf_id, ], resultList$defects[[vf_id]])
+      # rv$date <- as.Date(rv$date)
+    }
+  
+  resultList$get_norm_values <-
+    function(vf_id) {
+      rv <- cbind(resultList$fields[resultList$fields$vfID == vf_id, ], resultList$norm_values[[vf_id]])
       # rv$date <- as.Date(rv$date)
     }
   
