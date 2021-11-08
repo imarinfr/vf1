@@ -327,7 +327,7 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
       locMatrix$xod <- -locMatrix$xod
     
     # order locmap
-    locMatrix <- locMatrix[order(locMatrix$xod, locMatrix$yod), ]
+    locMatrix <- locMatrix[order(locMatrix$yod, locMatrix$xod, decreasing = c(TRUE, FALSE)), ]
     
     # give each location a key
     locMatrix$loc_ID <- 1:nrow(locMatrix)
@@ -366,6 +366,16 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
            function(vf_type) { vf_list <- defects[vf_index == vf_type]; rv <- t(sapply(vf_list, c)); return(rv)}
     )
   
+  # extract the norm_values
+  norm_values <- lapply(locations, 
+                    function (mt) { rv <- mt$norm; names(rv) <- paste0("l", mt$loc_ID); return(rv) }
+  )
+  
+  resultList$norm_values <- 
+    lapply(unique(vf_index), 
+           function(vf_type) { vf_list <- norm_values[vf_index == vf_type]; rv <- t(sapply(vf_list, c)); return(rv)}
+    )
+  
   # extract other properties
   resultList$fields <- dat[, c("id", "eye", "date", "time", "age", "type", "fpr", "fnr", "fl", "vfID")]
   
@@ -375,7 +385,7 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
       lmap <- list()
       vft <- resultList$vf_types[resultList$vf_types$vfID == vf_id, c("pattern", "locnum")]
       lmap$name <- paste(vft$pattern, vft$locnum)
-      lmap$desc <- "This locmap was automatically created from the csv exported by Eyesuite. NB: The locations are not numbered according to the standard!"
+      lmap$desc <- "This locmap was automatically created from the csv exported by Eyesuite."
       lmap$coord <- resultList$locmap[[vf_id]][, c("xod", "yod")]
       names(lmap$coord) <- c("x", "y")
       return(lmap)
@@ -390,6 +400,12 @@ loadoctopus <- function(file, type = "pwg", repeated = mean, dateFormat = "%d.%m
   resultList$get_defects <-
     function(vf_id) {
       rv <- cbind(resultList$fields[resultList$fields$vfID == vf_id, ], resultList$defects[[vf_id]])
+      # rv$date <- as.Date(rv$date)
+    }
+  
+  resultList$get_norm_values <-
+    function(vf_id) {
+      rv <- cbind(resultList$fields[resultList$fields$vfID == vf_id, ], resultList$norm_values[[vf_id]])
       # rv$date <- as.Date(rv$date)
     }
   
