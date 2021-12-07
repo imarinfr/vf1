@@ -15,14 +15,15 @@
 vfsfa <- function(vf, file, ...) {
   # always sort by ID, eye, date, and time
   vf <- vfsort(vf)
-  defpar <- par(no.readonly = TRUE) # read default par
-  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
+  defmar <- par("mar") # read default par
+  defps  <- par("ps")
+  on.exit(par(mar = defmar, ps = defps)) # reset default par on exit, even if the code crashes
   pdf(file, width = 8.27, height = 11.69)
-  par(mar = c(0, 0, 0, 0), ...)
+  par(mar = c(0, 0, 0, 0))
+  par(ps = 10)
   for(i in 1:nrow(vf)) {
     scrlist <- mountlayoutsfa()
     vfiter <- vfselect(vf, i)
-    par(ps = 10)
     screen(scrlist$title)
     filltitle("Single Field Analysis")
     screen(scrlist$info)
@@ -43,7 +44,6 @@ vfsfa <- function(vf, file, ...) {
     vfplot(vfiter, "pd", mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$col)
     drawcolscalesfa(getgpar()$colmap$map$probs, getgpar()$colmap$map$cols, ps = 6, ...)
-    par(ps = 10)
     screen(scrlist$foot)
     fillfoot()
     close.screen(all.screens = TRUE)
@@ -86,15 +86,16 @@ vfspa <- function(vf, file, type = "td", nperm = factorial(7),
   vf <- vfsort(vf)
   # run regression analyses
   res <- runregressions(vf, type, nperm, trunc, testSlope)
-  defpar <- par(no.readonly = TRUE) # read default par
-  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
+  defmar <- par("mar") # read default par
+  defps  <- par("ps")
+  on.exit(par(mar = defmar, ps = defps)) # reset default par on exit, even if the code crashes
   pdf(file, width = 8.27, height = 11.69)
-  par(mar = c(0, 0, 0, 0), ...)
+  par(mar = c(0, 0, 0, 0))
+  par(ps = 10)
   for(i in 1:length(res)) {
     # for each subject/eye
     scrlist <- mountlayoutspa()
-    vfeye <- filter(vf, !!sym("id") == res[[i]]$id, !!sym("eye") == res[[i]]$eye)
-    par(ps = 10)
+    vfeye <- vffilter(vf, !!sym("id") == res[[i]]$id, !!sym("eye") == res[[i]]$eye)
     screen(scrlist$title)
     filltitle("Series Progression Analysis")
     screen(scrlist$info)
@@ -124,7 +125,7 @@ vfspa <- function(vf, file, type = "td", nperm = factorial(7),
     screen(scrlist$col)
     drawcolscalespa(getgpar()$progcolmap$b$map$probs, getgpar()$progcolmap$b$map$cols, ps = 6, ...)
     screen(scrlist$spark)
-    vfplotsparklines(vfeye, type, mar = c(0, 0, 0, 0), ps = 8)
+    vfsparklines(vfeye, type, mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$poplrb)
     drawhist(res[[i]]$poplr, alternative = "GT")
     screen(scrlist$poplrw)
@@ -135,7 +136,6 @@ vfspa <- function(vf, file, type = "td", nperm = factorial(7),
     drawgi(res[[i]]$md, ylab = "Mean Deviation", ps = 8)
     screen(scrlist$gh)
     drawgi(res[[i]]$gh, ylab = "General Height", ps = 8)
-    par(ps = 10)
     screen(scrlist$foot)
     fillfoot()
     close.screen(all.screens = TRUE)
@@ -305,7 +305,7 @@ vfspashiny <- function(vf, type = "td", nperm = factorial(7),
     # show the pointwise linear regression plot
     output$plr  <- renderPlot(vfplotplr(vfseries(), type, mar = c(0, 0, 0, 0)))
     # show the sparklines plot
-    output$skl  <- renderPlot(vfplotsparklines(vfseries(), type, mar = c(0, 0, 0, 0)))
+    output$skl  <- renderPlot(vfsparklines(vfseries(), type, mar = c(0, 0, 0, 0)))
     # show the probability scales
     output$cbas <- renderPlot(drawcolscalesfa(getgpar()$colmap$map$probs, getgpar()$colmap$map$cols, ps = 8, ...))
     output$cplr <- renderPlot(drawcolscalesfa(getgpar()$progcolmap$b$map$probs, getgpar()$progcolmap$b$map$cols, ps = 8, ...))

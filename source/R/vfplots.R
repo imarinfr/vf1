@@ -27,6 +27,9 @@
 #'     a grayscale where darker means greater sensitivity loss
 #'   \item\code{vflegoplotdev} the legoplot for visual field total or pattern
 #'     deviation data with probability scales represented in color
+#'   \item\code{vfsparklines} the sparklines graph shows spark lines for the series
+#'     of visual field sensitivities, or total or pattern deviation data for each
+#'     location
 #' }
 #' @section Structure of graphical parameters:
 #' Graphical parameters for visualFields must be a list containing
@@ -347,7 +350,10 @@ vfplotsdev <- function(gpar, vf, maxval, dev, devp, digits = 0, ...) {
 #'   `\code{GT}` (as in "greater than"), `\code{NE}` (as in "not equal"),
 #'   and `\code{both}` (both `\code{LT}` and `\code{GT}`)
 #' @param xoffs,yoffs offset x and y where to print the slope values. That is,
-#' the distance from the center of each Voronoy polygons in degrees of visual angle
+#'   the distance from the center of each Voronoy polygons in degrees of visual angle
+#' @param addSpark whether to overlay a sparkline graph in each visual field location.
+#'   The parameters \code{thr}, \code{width}, and \code{height} are used only if
+#'   \code{addSpark} is \code{TRUE}. Default value is \code{FALSE}.
 #' @examples
 #' # plot results from pointwise linear regression for the series of
 #' # visual fields for the right eye in the dataset vfpwgSunyiu24d2
@@ -359,7 +365,8 @@ vfplotsdev <- function(gpar, vf, maxval, dev, devp, digits = 0, ...) {
 #' vfplotplr(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
 #' @return \code{vfplotplr} No return value
 #' @export
-vfplotplr <- function(vf, type = "td", alternative = "LT", xoffs = 0, yoffs = 0, ...) {
+vfplotplr <- function(vf, type = "td", alternative = "LT", xoffs = 0, yoffs = 0,
+                      addSpark = FALSE, thr = 2, width = 4, height = 2, ...) {
   res <- plr(vf, type) # if more than 1 ID/eye then it crashes as it should
   gpar <- getgpar() # get graphical parameters
   # left or right eye
@@ -393,6 +400,7 @@ vfplotplr <- function(vf, type = "td", alternative = "LT", xoffs = 0, yoffs = 0,
   # outer hull
   polygon(gpar$tess$hull, border = "lightgray")
   text(gpar$coord$x + xoffs, gpar$coord$y + yoffs, sl, col = rgb(0.3, 0.3, 0.3), ...)
+  if(addSpark) vfsparklines(vf, type, thr, width, height, add = TRUE, ...)
 }
 
 #' @rdname vfplots
@@ -559,15 +567,15 @@ vflegoplotdev <- function(gpar, vfb, devb, devpb, vfl, devl, devpl, crad = 2, di
 #' # sparklines for the series of visual fields for the right eye of
 #' # the subject in the dataset vfpwgSunyiu24d2
 #' # with sensitivity values
-#' vfplotsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "s")
+#' vfsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "s")
 #' # TD values
-#' vfplotsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "td")
+#' vfsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "td")
 #' # PD values
-#' vfplotsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
-#' @return \code{vfplotsparklines} No return value
+#' vfsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
+#' @return \code{vfsparklines} No return value
 #' @export
-vfplotsparklines <- function(vf, type = "td", thr = 2, width = 4,
-                             height = 2, add = FALSE, ...) {
+vfsparklines <- function(vf, type = "td", thr = 2, width = 4,
+                         height = 2, add = FALSE, ...) {
   if(nrow(unique(data.frame(vf$id, vf$eye))) != 1)
     stop("all visual fields must belong to the same subject id and eye")
   nv   <- getnv()
@@ -613,13 +621,13 @@ vfplotsparklines <- function(vf, type = "td", thr = 2, width = 4,
   if(gpar$tess$xlim[1] < gpar$tess$xlim[2]) {
     figs <- cbind(grconvertX(gpar$coord$x - width  / 2, to = "ndc"),
                   grconvertX(gpar$coord$x + width  / 2, to = "ndc"),
-                  grconvertY(gpar$coord$y, to = "ndc"),
-                  grconvertY(gpar$coord$y + height, to = "ndc"))
+                  grconvertY(gpar$coord$y,              to = "ndc"),
+                  grconvertY(gpar$coord$y + height,     to = "ndc"))
   } else {
     figs <- cbind(grconvertX(gpar$coord$x + width  / 2, to = "ndc"),
                   grconvertX(gpar$coord$x - width  / 2, to = "ndc"),
-                  grconvertY(gpar$coord$y, to = "ndc"),
-                  grconvertY(gpar$coord$y + height, to = "ndc"))
+                  grconvertY(gpar$coord$y,              to = "ndc"),
+                  grconvertY(gpar$coord$y + height,     to = "ndc"))
   }
   for(i in 1:nrow(figs)) {
     par(fig = figs[i,], new = TRUE)

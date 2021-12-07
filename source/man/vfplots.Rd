@@ -13,7 +13,7 @@
 \alias{vflegoplot}
 \alias{vflegoplotsens}
 \alias{vflegoplotdev}
-\alias{vfplotsparklines}
+\alias{vfsparklines}
 \title{Plots for visual fields data}
 \usage{
 vfgpar(
@@ -60,7 +60,18 @@ vfplotdev(gpar, vf, dev, devp, digits = 0, ...)
 
 vfplotsdev(gpar, vf, maxval, dev, devp, digits = 0, ...)
 
-vfplotplr(vf, type = "td", alternative = "LT", xoffs = 0, yoffs = 0, ...)
+vfplotplr(
+  vf,
+  type = "td",
+  alternative = "LT",
+  xoffs = 0,
+  yoffs = 0,
+  addSpark = FALSE,
+  thr = 2,
+  width = 4,
+  height = 2,
+  ...
+)
 
 vflegoplot(vf, type = "td", grp = 3, ...)
 
@@ -79,15 +90,7 @@ vflegoplotdev(
   ...
 )
 
-vfplotsparklines(
-  vf,
-  type = "td",
-  thr = 2,
-  width = 4,
-  height = 2,
-  add = FALSE,
-  ...
-)
+vfsparklines(vf, type = "td", thr = 2, width = 4, height = 2, add = FALSE, ...)
 }
 \arguments{
 \item{coord}{print x and y coordinates. Check section
@@ -147,6 +150,21 @@ and `\code{both}` (both `\code{LT}` and `\code{GT}`)}
 \item{xoffs, yoffs}{offset x and y where to print the slope values. That is,
 the distance from the center of each Voronoy polygons in degrees of visual angle}
 
+\item{addSpark}{whether to overlay a sparkline graph in each visual field location.
+The parameters \code{thr}, \code{width}, and \code{height} are used only if
+\code{addSpark} is \code{TRUE}. Default value is \code{FALSE}.}
+
+\item{thr}{threshold used for the median absolute deviation of residuals
+from simple linear regression. If greater than the threshold, the
+sparkline for that location is plotted in red and with a thicker line.
+Default is `\code{2}` (dB)}
+
+\item{width}{the width of each pointwise sparkline plot. Default is
+`\code{4}` (degrees of visual angle)}
+
+\item{height}{the height of each pointwise sparkline plot. Default is
+`\code{2}` (degrees of visual angle)}
+
 \item{grp}{number of baseline (first) and last visual fields to group.
 Default is `\code{3}`}
 
@@ -167,17 +185,6 @@ Default is `\code{3}`}
 \item{devl}{last visual field (TD or PD) deviation values}
 
 \item{devpl}{last visual field (TD or PD) deviation probability values}
-
-\item{thr}{threshold used for the median absolute deviation of residuals
-from simple linear regression. If greater than the threshold, the
-sparkline for that location is plotted in red and with a thicker line.
-Default is `\code{2}` (dB)}
-
-\item{width}{the width of each pointwise sparkline plot. Default is
-`\code{4}` (degrees of visual angle)}
-
-\item{height}{the height of each pointwise sparkline plot. Default is
-`\code{2}` (degrees of visual angle)}
 
 \item{add}{whether to generate a new plot (`\code{FALSE}`, as default)
 or to add to an existing figure (`\code{TRUE}`)}
@@ -209,7 +216,7 @@ to be used for vfplots
 
 \code{vflegoplotdev} No return value
 
-\code{vfplotsparklines} No return value
+\code{vfsparklines} No return value
 }
 \description{
 Graphical tools for visualization and statistical analysis of
@@ -240,6 +247,9 @@ The following functions generate plots using visual fields data
     a grayscale where darker means greater sensitivity loss
   \item\code{vflegoplotdev} the legoplot for visual field total or pattern
     deviation data with probability scales represented in color
+  \item\code{vfsparklines} the sparklines graph shows spark lines for the series
+    of visual field sensitivities, or total or pattern deviation data for each
+    location
 }
 }
 \section{Structure of graphical parameters}{
@@ -327,9 +337,9 @@ vflegoplot(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
 # sparklines for the series of visual fields for the right eye of
 # the subject in the dataset vfpwgSunyiu24d2
 # with sensitivity values
-vfplotsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "s")
+vfsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "s")
 # TD values
-vfplotsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "td")
+vfsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "td")
 # PD values
-vfplotsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
+vfsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
 }
