@@ -25,6 +25,6 @@ URL: https://www.optocom.es
 Depends: R(>= 3.5)
 Imports: Hmisc, dplyr, polyclip, deldir, plotrix, gtools, combinat, XML, oro.dicom, rlang, shiny, shinyjs, DT, htmlTable, boot, pracma
 LazyData: true
-LazyDataCompression:xz
+LazyDataCompression: xz
 Encoding: UTF-8
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
