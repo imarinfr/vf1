@@ -167,7 +167,7 @@ vfisvalid <- function(vf) {
     return(FALSE)
   }
   # check date does have Date class
-  if(class(vf$date) != "Date") {
+  if(!inherits(vf$date, "Date")) {
     warning("Field 'date' must be sucessfully converted to 'Date' class", call. = FALSE)
     return(FALSE)
   }
