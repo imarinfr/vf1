@@ -6,13 +6,8 @@
 \alias{vfcolscheme}
 \alias{vfprogcolscheme}
 \alias{vfplot}
-\alias{vfplotsens}
-\alias{vfplotdev}
-\alias{vfplotsdev}
 \alias{vfplotplr}
 \alias{vflegoplot}
-\alias{vflegoplotsens}
-\alias{vflegoplotdev}
 \alias{vfsparklines}
 \title{Plots for visual fields data}
 \usage{
@@ -54,12 +49,6 @@ vfprogcolscheme(
 
 vfplot(vf, type = "td", ...)
 
-vfplotsens(gpar, vf, maxval, digits = 0, ...)
-
-vfplotdev(gpar, vf, dev, devp, digits = 0, ...)
-
-vfplotsdev(gpar, vf, maxval, dev, devp, digits = 0, ...)
-
 vfplotplr(
   vf,
   type = "td",
@@ -73,20 +62,14 @@ vfplotplr(
   ...
 )
 
-vflegoplot(vf, type = "td", grp = 3, ...)
-
-vflegoplotsens(gpar, vfb, vfl, maxb, maxl, crad = 2, digits = 1, ...)
-
-vflegoplotdev(
-  gpar,
-  vfb,
-  devb,
-  devpb,
-  vfl,
-  devl,
-  devpl,
-  crad = 2,
-  digits = 1,
+vflegoplot(
+  vf,
+  type = "td",
+  grp = 3,
+  addSpark = FALSE,
+  thr = 2,
+  width = 4,
+  height = 2,
   ...
 )
 
@@ -132,16 +115,6 @@ levels (`\code{pds}`). Default is `\code{td}`.}
 
 \item{...}{other graphical arguments. See \code{\link{plot}}}
 
-\item{gpar}{graphical parameters}
-
-\item{maxval}{maximum value, typically in dB, for the generation of a grayscale}
-
-\item{digits}{digits to round values to plot. Default is 0}
-
-\item{dev}{deviation (TD or PD) values}
-
-\item{devp}{deviation (TD or PD) probability values}
-
 \item{alternative}{alternative hypothesis used in progression analyses.
 Allowed values are `\code{LT}` (as in "lower than", default),
 `\code{GT}` (as in "greater than"), `\code{NE}` (as in "not equal"),
@@ -168,24 +141,6 @@ Default is `\code{2}` (dB)}
 \item{grp}{number of baseline (first) and last visual fields to group.
 Default is `\code{3}`}
 
-\item{vfb}{baseline visual field data}
-
-\item{vfl}{last visual field data}
-
-\item{maxb}{maximum value for the grayscale at baseline visual field data}
-
-\item{maxl}{maximum value for the grayscale for last visual field data}
-
-\item{crad}{radius of the circle in the legoplot}
-
-\item{devb}{baseline visual field (TD or PD) deviation values}
-
-\item{devpb}{baseline visual field (TD or PD) deviation probability values}
-
-\item{devl}{last visual field (TD or PD) deviation values}
-
-\item{devpl}{last visual field (TD or PD) deviation probability values}
-
 \item{add}{whether to generate a new plot (`\code{FALSE}`, as default)
 or to add to an existing figure (`\code{TRUE}`)}
 }
@@ -202,19 +157,9 @@ to be used for vfplots
 
 \code{vfplot} No return value
 
-\code{vfplotsens} No return value
-
-\code{vfplotdev} No return value
-
-\code{vfplotsdev} No return value
-
 \code{vfplotplr} No return value
 
 \code{vflegoplot} No return value
-
-\code{vflegoplotsens} No return value
-
-\code{vflegoplotdev} No return value
 
 \code{vfsparklines} No return value
 }

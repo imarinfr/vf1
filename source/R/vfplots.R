@@ -244,107 +244,6 @@ vfplot <- function(vf, type = "td", ...) {
 }
 
 #' @rdname vfplots
-#' @param gpar graphical parameters
-#' @param maxval maximum value, typically in dB, for the generation of a grayscale
-#' @param digits digits to round values to plot. Default is 0
-#' @return \code{vfplotsens} No return value
-#' @export
-vfplotsens <- function(gpar, vf, maxval, digits = 0, ...) {
-  # background gray shades
-  fcol <- (vf - gpar$tess$floor) / (maxval - gpar$tess$floor)
-  fcol[fcol > 1] <- 1
-  fcol[fcol < 0] <- 0
-  # foreground text gray shades
-  tcol <- rep(0.3, length(vf))
-  tcol[fcol < 0.5] <- 0.7
-  # blind spot
-  fcol[getlocmap()$bs] <- 1
-  tcol[getlocmap()$bs] <- 0.3
-  # convert to hexadecimal color
-  fcol <- rgb(fcol, fcol, fcol)
-  tcol <- rgb(tcol, tcol, tcol)
-  plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE,
-       axes = FALSE, asp = 1,
-       xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
-  # plot polygons
-  for(i in 1:length(gpar$tess$tiles))
-    polygon(gpar$tess$tiles[[i]], col = fcol[i], border = NA)
-  # add blind spot
-  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)
-  # outer hull
-  polygon(gpar$tess$hull, border = "lightgray")
-  txt <- round(vf, digits)
-  txt[is.na(vf)] <- ""
-  txt[vf < gpar$tess$floor] <- paste0("<", gpar$tess$floor)
-  text(gpar$coord$x, gpar$coord$y, txt, col = tcol, ...)
-}
-
-#' @rdname vfplots
-#' @param dev deviation (TD or PD) values
-#' @param devp deviation (TD or PD) probability values
-#' @return \code{vfplotdev} No return value
-#' @export
-vfplotdev <- function(gpar, vf, dev, devp, digits = 0, ...) {
-  # background colors and foreground text gray shades
-  cols <- gpar$colmap$fun(vf, devp)
-  plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE,
-       axes = FALSE, asp = 1,
-       xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
-  # plot polygons
-  for(i in 1:length(gpar$tess$tiles)) {
-    tiles  <- gpar$tess$tiles[[i]] # get tiles
-    otiles <- polyoffset(tiles, -0.75, jointype = "round")[[1]] # shrink tiles to plot white region
-    polygon(tiles, col = cols[i], border = "lightgray")  # plot tiles with grayscales
-    polygon(otiles, col = "white", border = NA) # plot tiles with white background to show text
-  }
-  # add blind spot
-  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)  
-  # outer hull
-  polygon(gpar$tess$hull, border = "lightgray")   
-  txt <- round(dev, digits)
-  txt[is.na(dev)] <- ""
-  text(gpar$coord$x, gpar$coord$y, txt, col = rgb(0.3, 0.3, 0.3), ...)
-}
-
-#' @rdname vfplots
-#' @return \code{vfplotsdev} No return value
-#' @export
-vfplotsdev <- function(gpar, vf, maxval, dev, devp, digits = 0, ...) {
-  # background gray shades
-  fcol <- (vf - gpar$tess$floor) / (maxval - gpar$tess$floor)
-  fcol[fcol > 1] <- 1
-  fcol[fcol < 0] <- 0
-  # foreground text gray shades
-  tcol <- rep(0.3, length(vf))
-  tcol[fcol < 0.5] <- 0.7
-  # blind spot
-  fcol[getlocmap()$bs] <- 1
-  tcol[getlocmap()$bs] <- 0.3
-  # convert to hexadecimal color
-  fcol <- rgb(fcol, fcol, fcol)
-  tcol <- rgb(tcol, tcol, tcol)
-  # background colors and foreground text gray shades
-  cols <- gpar$colmap$fun(vf, devp)
-  plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE,
-       axes = FALSE, asp = 1,
-       xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
-  # plot polygons
-  for(i in 1:length(gpar$tess$tiles)) {
-    tiles  <- gpar$tess$tiles[[i]] # get tiles
-    otiles <- polyoffset(tiles, -0.75, jointype = "round")[[1]] # shrink tiles to plot white region
-    polygon(tiles, col = cols[i], border = "lightgray")  # plot tiles with grayscales
-    polygon(otiles, col = fcol[i], border = NA) # plot tiles with white background to show text
-  }
-  # add blind spot
-  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)  
-  # outer hull
-  polygon(gpar$tess$hull, border = "lightgray")   
-  txt <- round(dev, digits)
-  txt[is.na(dev)] <- ""
-  text(gpar$coord$x, gpar$coord$y, txt, col = tcol, ...)
-}
-
-#' @rdname vfplots
 #' @param alternative alternative hypothesis used in progression analyses.
 #'   Allowed values are `\code{LT}` (as in "lower than", default),
 #'   `\code{GT}` (as in "greater than"), `\code{NE}` (as in "not equal"),
@@ -417,7 +316,7 @@ vfplotplr <- function(vf, type = "td", alternative = "LT", xoffs = 0, yoffs = 0,
 #' vflegoplot(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
 #' @return \code{vflegoplot} No return value
 #' @export
-vflegoplot <- function(vf, type = "td", grp = 3, ...) {
+vflegoplot <- function(vf, type = "td", grp = 3, addSpark = FALSE, thr = 2, width = 4, height = 2, ...) {
   if(nrow(unique(data.frame(vf$id, vf$eye))) != 1)
     stop("all visual fields must belong to the same subject id and eye")
   nv   <- getnv()
@@ -427,6 +326,8 @@ vflegoplot <- function(vf, type = "td", grp = 3, ...) {
   if(vf$eye[1] == "OS") gpar$tess$xlim <- gpar$tess$xlim[2:1]
   vfb <- vfmean(vfselect(vf, sel = "first", n = grp), by = "eye")
   vfl <- vfmean(vfselect(vf, sel = "last", n = grp), by = "eye")
+  defpar <- par(no.readonly = TRUE) # read default par
+  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
   if(type == "s") {
     maxb <- nv$agem$model(vfb$age)
     maxl <- nv$agem$model(vfb$age)
@@ -447,109 +348,7 @@ vflegoplot <- function(vf, type = "td", grp = 3, ...) {
                   vfb[,locs], devb[,locs], devbp[,locs],
                   vfl[,locs], devl[,locs], devlp[,locs], ...)
   }
-}
-
-#' @rdname vfplots
-#' @param vfb baseline visual field data
-#' @param vfl last visual field data
-#' @param maxb maximum value for the grayscale at baseline visual field data
-#' @param maxl maximum value for the grayscale for last visual field data
-#' @param crad radius of the circle in the legoplot
-#' @return \code{vflegoplotsens} No return value
-#' @export
-vflegoplotsens <- function(gpar, vfb, vfl, maxb, maxl, crad = 2, digits = 1, ...) {
-  bs <- getlocmap()$bs
-  # baseline grayscale
-  fcolb <- (vfb - gpar$tess$floor) / (maxb - gpar$tess$floor)
-  fcolb[fcolb > 1] <- 1
-  fcolb[fcolb < 0] <- 0
-  fcolb[bs] <- 1   # blind spot
-  fcolb <- rgb(fcolb, fcolb, fcolb)
-  # final grayscale
-  fcol <- (vfl - gpar$tess$floor) / (maxl - gpar$tess$floor)
-  fcol[fcol > 1] <- 1
-  fcol[fcol < 0] <- 0
-  fcol[bs] <- 1
-  # foreground text gray shades
-  tcol <- rep(0.3, length(vfl))
-  tcol[fcol < 0.5] <- 0.7
-  # convert to hexadecimal color
-  fcol <- rgb(fcol, fcol, fcol)
-  tcol <- rgb(tcol, tcol, tcol)
-  # values to present
-  txt <- round(vfl - vfb, digits)
-  # remove blind spot locations
-  coord <- gpar$coord
-  if(length(bs) > 0) {
-    coord <- coord[-bs,]
-    txt   <- txt[-bs]
-    fcol  <- fcol[-bs]
-    tcol  <- tcol[-bs]
-  }
-  # plot
-  defpar <- par(no.readonly = TRUE) # read default par
-  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
-  par(mar = c(0, 0, 0, 0), ...)
-  plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE, axes = FALSE, asp = 1,
-       xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
-  # plot polygons
-  for(i in 1:length(gpar$tess$tiles))
-    polygon(gpar$tess$tiles[[i]], border = "lightgray", col = fcolb[i])
-  # add blind spot
-  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)
-  # outer hull
-  polygon(gpar$tess$hull, border = "lightgray")
-  # draw circles
-  for(i in 1:nrow(coord))
-    draw.circle(coord$x[i], coord$y[i], radius = crad, col = fcol[i], lty = 0)
-  text(coord$x, coord$y, txt, col = tcol, ...)
-}
-
-#' @rdname vfplots
-#' @param devb baseline visual field (TD or PD) deviation values
-#' @param devpb baseline visual field (TD or PD) deviation probability values
-#' @param devl last visual field (TD or PD) deviation values
-#' @param devpl last visual field (TD or PD) deviation probability values
-#' @return \code{vflegoplotdev} No return value
-#' @export
-vflegoplotdev <- function(gpar, vfb, devb, devpb, vfl, devl, devpl, crad = 2, digits = 1, ...) {
-  bs <- getlocmap()$bs
-  # baseline colors
-  colsb <- gpar$colmap$fun(vfb, devpb)
-  # final colors
-  colsl <- gpar$colmap$fun(vfl, devpl)
-  # values to present
-  txt <- round(devl - devb, digits)
-  # text color
-  tcol   <- rep(0.3, length(vfl))
-  colrgb <- col2rgb(colsl) / 255
-  tcol[(0.2126 * colrgb[1,] + 0.7152 * colrgb[2,] + 0.0722 * colrgb[3,]) < 0.4] <- 0.7
-  tcol <- rgb(tcol, tcol, tcol)
-  # remove blind spot locations
-  coord <- gpar$coord
-  if(length(bs) > 0) {
-    coord <- coord[-bs,]
-    txt   <- txt[-bs]
-    colsl <- colsl[-bs]
-    tcol  <- tcol[-bs]
-  }
-  # plot
-  defpar <- par(no.readonly = TRUE) # read default par
-  on.exit(par(defpar))              # reset default par on exit, even if the code crashes
-  par(mar = c(0, 0, 0, 0), ...)
-  plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE, axes = FALSE, asp = 1,
-       xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
-  # plot polygons
-  for(i in 1:length(gpar$tess$tiles))
-    polygon(gpar$tess$tiles[[i]], border = "lightgray", col = colsb[i])
-  # add blind spot
-  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)
-  # outer hull
-  polygon(gpar$tess$hull, border = "lightgray")
-  # draw circles
-  for(i in 1:nrow(coord))
-    draw.circle(coord$x[i], coord$y[i], radius = crad, col = colsl[i], lty = 0)
-  text(coord$x, coord$y, txt, col = tcol, ...)
+  if(addSpark) vfsparklines(vf, type, thr, width, height, add = TRUE, ...)
 }
 
 #' @rdname vfplots
@@ -633,4 +432,182 @@ vfsparklines <- function(vf, type = "td", thr = 2, width = 4,
     par(fig = figs[i,], new = TRUE)
     plot(x, y[,i], type = "l", xlim = xlim, ylim = ylim, axes = FALSE, col = cols[i], ...)
   }
+}
+
+#### INTERNAL FUNCTIONS
+
+# plot sensitivity values
+vfplotsens <- function(gpar, vf, maxval, digits = 0, ...) {
+  # background gray shades
+  fcol <- (vf - gpar$tess$floor) / (maxval - gpar$tess$floor)
+  fcol[fcol > 1] <- 1
+  fcol[fcol < 0] <- 0
+  # foreground text gray shades
+  tcol <- rep(0.3, length(vf))
+  tcol[fcol < 0.5] <- 0.7
+  # blind spot
+  fcol[getlocmap()$bs] <- 1
+  tcol[getlocmap()$bs] <- 0.3
+  # convert to hexadecimal color
+  fcol <- rgb(fcol, fcol, fcol)
+  tcol <- rgb(tcol, tcol, tcol)
+  plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE,
+       axes = FALSE, asp = 1,
+       xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
+  # plot polygons
+  for(i in 1:length(gpar$tess$tiles))
+    polygon(gpar$tess$tiles[[i]], col = fcol[i], border = NA)
+  # add blind spot
+  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)
+  # outer hull
+  polygon(gpar$tess$hull, border = "lightgray")
+  txt <- round(vf, digits)
+  txt[is.na(vf)] <- ""
+  txt[vf < gpar$tess$floor] <- paste0("<", gpar$tess$floor)
+  text(gpar$coord$x, gpar$coord$y, txt, col = tcol, ...)
+}
+
+# plot deviation values
+vfplotdev <- function(gpar, vf, dev, devp, digits = 0, ...) {
+  # background colors and foreground text gray shades
+  cols <- gpar$colmap$fun(vf, devp)
+  plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE,
+       axes = FALSE, asp = 1,
+       xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
+  # plot polygons
+  for(i in 1:length(gpar$tess$tiles)) {
+    tiles  <- gpar$tess$tiles[[i]] # get tiles
+    otiles <- polyoffset(tiles, -0.75, jointype = "round")[[1]] # shrink tiles to plot white region
+    polygon(tiles, col = cols[i], border = "lightgray")  # plot tiles with grayscales
+    polygon(otiles, col = "white", border = NA) # plot tiles with white background to show text
+  }
+  # add blind spot
+  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)  
+  # outer hull
+  polygon(gpar$tess$hull, border = "lightgray")   
+  txt <- round(dev, digits)
+  txt[is.na(dev)] <- ""
+  text(gpar$coord$x, gpar$coord$y, txt, col = rgb(0.3, 0.3, 0.3), ...)
+}
+
+# hybrid plot with sensitivities and deviation values
+vfplotsdev <- function(gpar, vf, maxval, dev, devp, digits = 0, ...) {
+  # background gray shades
+  fcol <- (vf - gpar$tess$floor) / (maxval - gpar$tess$floor)
+  fcol[fcol > 1] <- 1
+  fcol[fcol < 0] <- 0
+  # foreground text gray shades
+  tcol <- rep(0.3, length(vf))
+  tcol[fcol < 0.5] <- 0.7
+  # blind spot
+  fcol[getlocmap()$bs] <- 1
+  tcol[getlocmap()$bs] <- 0.3
+  # convert to hexadecimal color
+  fcol <- rgb(fcol, fcol, fcol)
+  tcol <- rgb(tcol, tcol, tcol)
+  # background colors and foreground text gray shades
+  cols <- gpar$colmap$fun(vf, devp)
+  plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE,
+       axes = FALSE, asp = 1,
+       xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
+  # plot polygons
+  for(i in 1:length(gpar$tess$tiles)) {
+    tiles  <- gpar$tess$tiles[[i]] # get tiles
+    otiles <- polyoffset(tiles, -0.75, jointype = "round")[[1]] # shrink tiles to plot white region
+    polygon(tiles, col = cols[i], border = "lightgray")  # plot tiles with grayscales
+    polygon(otiles, col = fcol[i], border = NA) # plot tiles with white background to show text
+  }
+  # add blind spot
+  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)  
+  # outer hull
+  polygon(gpar$tess$hull, border = "lightgray")   
+  txt <- round(dev, digits)
+  txt[is.na(dev)] <- ""
+  text(gpar$coord$x, gpar$coord$y, txt, col = tcol, ...)
+}
+
+# lego plot with sensitivity values
+vflegoplotsens <- function(gpar, vfb, vfl, maxb, maxl, crad = 2, digits = 1, ...) {
+  bs <- getlocmap()$bs
+  # baseline grayscale
+  fcolb <- (vfb - gpar$tess$floor) / (maxb - gpar$tess$floor)
+  fcolb[fcolb > 1] <- 1
+  fcolb[fcolb < 0] <- 0
+  fcolb[bs] <- 1   # blind spot
+  fcolb <- rgb(fcolb, fcolb, fcolb)
+  # final grayscale
+  fcol <- (vfl - gpar$tess$floor) / (maxl - gpar$tess$floor)
+  fcol[fcol > 1] <- 1
+  fcol[fcol < 0] <- 0
+  fcol[bs] <- 1
+  # foreground text gray shades
+  tcol <- rep(0.3, length(vfl))
+  tcol[fcol < 0.5] <- 0.7
+  # convert to hexadecimal color
+  fcol <- rgb(fcol, fcol, fcol)
+  tcol <- rgb(tcol, tcol, tcol)
+  # values to present
+  txt <- round(vfl - vfb, digits)
+  # remove blind spot locations
+  coord <- gpar$coord
+  if(length(bs) > 0) {
+    coord <- coord[-bs,]
+    txt   <- txt[-bs]
+    fcol  <- fcol[-bs]
+    tcol  <- tcol[-bs]
+  }
+  # plot
+  par(mar = c(0, 0, 0, 0), ...)
+  plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE, axes = FALSE, asp = 1,
+       xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
+  # plot polygons
+  for(i in 1:length(gpar$tess$tiles))
+    polygon(gpar$tess$tiles[[i]], border = "lightgray", col = fcolb[i])
+  # add blind spot
+  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)
+  # outer hull
+  polygon(gpar$tess$hull, border = "lightgray")
+  # draw circles
+  for(i in 1:nrow(coord))
+    draw.circle(coord$x[i], coord$y[i], radius = crad, col = fcol[i], lty = 0)
+  text(coord$x, coord$y, txt, col = tcol, ...)
+}
+
+# lego plot with deviation values
+vflegoplotdev <- function(gpar, vfb, devb, devpb, vfl, devl, devpl, crad = 2, digits = 1, ...) {
+  bs <- getlocmap()$bs
+  # baseline colors
+  colsb <- gpar$colmap$fun(vfb, devpb)
+  # final colors
+  colsl <- gpar$colmap$fun(vfl, devpl)
+  # values to present
+  txt <- round(devl - devb, digits)
+  # text color
+  tcol   <- rep(0.3, length(vfl))
+  colrgb <- col2rgb(colsl) / 255
+  tcol[(0.2126 * colrgb[1,] + 0.7152 * colrgb[2,] + 0.0722 * colrgb[3,]) < 0.4] <- 0.7
+  tcol <- rgb(tcol, tcol, tcol)
+  # remove blind spot locations
+  coord <- gpar$coord
+  if(length(bs) > 0) {
+    coord <- coord[-bs,]
+    txt   <- txt[-bs]
+    colsl <- colsl[-bs]
+    tcol  <- tcol[-bs]
+  }
+  # plot
+  par(mar = c(0, 0, 0, 0), ...)
+  plot(gpar$coord$x, gpar$coord$y, typ = "n", ann = FALSE, axes = FALSE, asp = 1,
+       xlim = gpar$tess$xlim, ylim = gpar$tess$ylim, ...)
+  # plot polygons
+  for(i in 1:length(gpar$tess$tiles))
+    polygon(gpar$tess$tiles[[i]], border = "lightgray", col = colsb[i])
+  # add blind spot
+  draw.ellipse(15, -1.5, 2.75, 3.75, col = "lightgray", border = NA)
+  # outer hull
+  polygon(gpar$tess$hull, border = "lightgray")
+  # draw circles
+  for(i in 1:nrow(coord))
+    draw.circle(coord$x[i], coord$y[i], radius = crad, col = colsl[i], lty = 0)
+  text(coord$x, coord$y, txt, col = tcol, ...)
 }
