@@ -43,8 +43,7 @@ vfcolscheme(
 
 vfprogcolscheme(
   probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 1),
-  cols = c("#000000", colorRampPalette(c("#FF0000", "#FFFF00"))(4), "#F7F0EB",
-    "#008000")
+  cols = c("#000000", colorRampPalette(c("#FF0000", "#FFFF00"))(4), "#F7F0EB", "#008000")
 )
 
 vfplot(vf, type = "td", ...)
