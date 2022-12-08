@@ -290,7 +290,7 @@ vfplotplr <- function(vf, type = "td", alternative = "LT", xoffs = 0, yoffs = 0,
   # plot polygons
   for(i in 1:length(gpar$tess$tiles)) {
     tiles  <- gpar$tess$tiles[[i]] # get tiles
-    otiles <- polyoffset(tiles, -0.75, jointype = "round")[[1]] # shrink tiles to plot white region
+    otiles <- polyoffset(tiles, -0.6, jointype = "round")[[1]] # shrink tiles to plot white region
     polygon(tiles, col = cols[i], border = "lightgray")  # plot tiles with grayscales
     polygon(otiles, col = "white", border = NA) # plot tiles with white background to show text
   }
@@ -477,7 +477,7 @@ vfplotdev <- function(gpar, vf, dev, devp, digits = 0, ...) {
   # plot polygons
   for(i in 1:length(gpar$tess$tiles)) {
     tiles  <- gpar$tess$tiles[[i]] # get tiles
-    otiles <- polyoffset(tiles, -0.75, jointype = "round")[[1]] # shrink tiles to plot white region
+    otiles <- polyoffset(tiles, -0.6, jointype = "round")[[1]] # shrink tiles to plot white region
     polygon(tiles, col = cols[i], border = "lightgray")  # plot tiles with grayscales
     polygon(otiles, col = "white", border = NA) # plot tiles with white background to show text
   }
@@ -513,7 +513,7 @@ vfplotsdev <- function(gpar, vf, maxval, dev, devp, digits = 0, ...) {
   # plot polygons
   for(i in 1:length(gpar$tess$tiles)) {
     tiles  <- gpar$tess$tiles[[i]] # get tiles
-    otiles <- polyoffset(tiles, -0.75, jointype = "round")[[1]] # shrink tiles to plot white region
+    otiles <- polyoffset(tiles, -0.6, jointype = "round")[[1]] # shrink tiles to plot white region
     polygon(tiles, col = cols[i], border = "lightgray")  # plot tiles with grayscales
     polygon(otiles, col = fcol[i], border = NA) # plot tiles with white background to show text
   }

@@ -234,7 +234,7 @@ poplr <- function(vf, type = "td", testSlope = 0, nperm = factorial(7), trunc = 
     if(nrow(porder) != nperm)
       stop("something went wrong and did not get the number of permutations you wanted")
   }
-  # get the p-values from pointwise linear regression for series and all permumtations
+  # get the p-values from pointwise linear regression for series and all permutations
   pstats <- poplrpvals(y, years, porder, testSlope)
   # ... and compute the combined S statistic, after removing the blind spot
   pval <- pstats$permutations$pval
