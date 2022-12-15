@@ -18,7 +18,11 @@ nvgenerate(
   name = "",
   perimetry = "static automated perimetry",
   strategy = "",
-  size = ""
+  size = "",
+  agem = agelm(vf),
+  tdfun = tddef(agem),
+  ghfun = ghdef(0.85),
+  pdfun = pddef(ghfun)
 )
 
 agelm(vf)
@@ -58,11 +62,15 @@ locations or empty (default)}
 
 \item{agem}{age model to construct the function to obtain TD values}
 
+\item{tdfun}{Function for the calculation of total deviation maps}
+
+\item{ghfun}{function used for determination of the GH and PD values}
+
+\item{pdfun}{Function for the calculation of pattern deviation maps}
+
 \item{perc}{the percentile to obtain the ranked TD value as
 reference for the general height (GH) of the visual field.
 Default is the 85th percentile, thus \code{0.85}}
-
-\item{ghfun}{function used for determination of the GH and PD values}
 
 \item{type}{type of estimation for the weighted quantile values. See
 \code{\link{wtd.quantile}} for details. Default is `\code{quantile}`}

@@ -100,14 +100,16 @@
 #'   "SITA standard". Default is blank
 #' @param size stimulus size, if the same size was used for all visual field
 #'   locations or empty (default)
+#' @param agem Age model
+#' @param tdfun Function for the calculation of total deviation maps
+#' @param ghfun Function to obtain an estimate of the general height
+#' @param pdfun Function for the calculation of pattern deviation maps
 #' @return \code{nvgenerate} returns a list with normative values
 #' @export
 nvgenerate <- function(vf, method = "pointwise",
-                       probs     = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 0.98, 0.99, 0.995, 1),
-                       name      = "",
-                       perimetry = "static automated perimetry",
-                       strategy  = "",
-                       size      = "") {
+                       probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 0.98, 0.99, 0.995, 1),
+                       name = "", perimetry = "static automated perimetry", strategy = "", size = "",
+                       agem = agelm(vf), tdfun = tddef(agem), ghfun = ghdef(0.85), pdfun = pddef(ghfun)) {
   if(method != "pointwise" && method != "smooth")
     stop("wrong method for generating normative values")
   if(any(probs < 0) || any(probs > 1))
@@ -116,17 +118,11 @@ nvgenerate <- function(vf, method = "pointwise",
     stop("probability values must include values 0 and 1")
   probs <- sort(probs)
   info <- list(name = name, perimetry = perimetry, strategy = strategy, size = size)
-  # construct the default age linear model
-  agem <- agelm(vf)
   if(method == "smooth") { # smooth out intercepts and slopes
     agem$coeff$intercept <- vfsmooth(agem$coeff$intercept)
     agem$coeff$slope     <- vfsmooth(agem$coeff$slope)
     environment(agem$model)$coeff <- t(as.matrix(agem$coeff))
   }
-  # define the functions for the default methods to compute TD, GH, and PD
-  tdfun <- tddef(agem)
-  ghfun <- ghdef(0.85)
-  pdfun <- pddef(ghfun)
   # get TD and PD values, ...
   td <- tdfun(vf)
   pd <- pdfun(td)
