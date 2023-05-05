@@ -27,4 +27,4 @@ Imports: Hmisc, dplyr, polyclip, deldir, plotrix, gtools, combinat, XML, oro.dic
 LazyData: true
 LazyDataCompression: xz
 Encoding: UTF-8
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
