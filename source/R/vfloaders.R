@@ -9,7 +9,7 @@
 #' on visual field pattern deviation values and normative values. The list that is returned
 #' with the \code{loadoctopus} loader contains data frames which are structured with keys so that
 #' redundancy is minimized (similar to a relational database). Detailed examples for
-#' \code{loadoctopus}: \url{https://rpubs.com/huchzi/645357}
+#' \code{loadoctopus}: \url{https://huchzi.github.io/vf1/loadOctopus.html}
 #' @param file file to load (it is a XML extracted with the export license for
 #' the HFA loader), a CSV outputed by the Eyesuite software for the Octopus
 #' perimeter and a CSV with two columns for the batch HFA loader. The two columns
