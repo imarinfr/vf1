@@ -43,5 +43,5 @@ from files generated with the Eyesuite software. The parser also extracts inform
 on visual field pattern deviation values and normative values. The list that is returned
 with the \code{loadoctopus} loader contains data frames which are structured with keys so that
 redundancy is minimized (similar to a relational database). Detailed examples for
-\code{loadoctopus}: \url{https://rpubs.com/huchzi/645357}
+\code{loadoctopus}: \url{https://huchzi.github.io/vf1/loadOctopus.html}
 }
