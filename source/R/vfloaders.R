@@ -119,13 +119,14 @@ loadhfaxml <- function(file, type = "pwg", repeated = mean) {
   if("GLOBAL_INDICES" %in% names(dat)) {
     vals <- vf[,getvfcols()]
     if(length(bs) > 1) vals <- vals[,-bs]
+    vfi <- as.numeric(dat$GLOBAL_INDICES$VFI)
     g <- data.frame(msens = apply(vals, 1, mean),
                     ssens = apply(vals, 1, sd),
                     tmd = as.numeric(dat$GLOBAL_INDICES$MD),
                     tsd = NA,
                     pmd = NA,
                     psd = as.numeric(dat$GLOBAL_INDICES$PSD),
-                    vfi = as.numeric(dat$GLOBAL_INDICES$VFI))
+                    vfi = ifelse(is.null(vfi), NA, vfi))
     gp <- data.frame(msens = NA,
                      ssens = NA,
                      tmd = cutoffs[1 + as.numeric(dat$GLOBAL_INDICES$MD_PROBABILITY)],
