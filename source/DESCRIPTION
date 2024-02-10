@@ -20,7 +20,7 @@ Description: A collection of tools for analyzing the field of vision. It
     collaborative research. The package is described in Marin-Franch and Swanson
     (2013) <doi:10.1167/13.4.10> and is part of the Open Perimetry Initiative
     (OPI) [Turpin, Artes, and McKendrick (2012) <doi:10.1167/12.11.22>].
-License: GPL-3
+License: Apache License 2.0
 URL: https://www.optocom.es
 Depends: R(>= 3.5)
 Imports: Hmisc, dplyr, polyclip, deldir, plotrix, gtools, combinat, XML, oro.dicom, rlang, shiny, shinyjs, DT, htmlTable, boot, pracma
