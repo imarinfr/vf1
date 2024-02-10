@@ -1,4 +1,4 @@
-#' @rdname normals
+#' @rdname normvals
 #' @title List of normative values that can be used for statistical analysis and
 #' visualization
 #' @description It contains a list of normative values, including pointwise and
