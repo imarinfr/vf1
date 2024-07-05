@@ -435,8 +435,7 @@ vfsparklines <- function(vf, type = "td", thr = 2, width = 4,
 }
 
 #### INTERNAL FUNCTIONS
-
-# plot sensitivity values
+#' @noRd
 vfplotsens <- function(gpar, vf, maxval, digits = 0, ...) {
   # background gray shades
   fcol <- (vf - gpar$tess$floor) / (maxval - gpar$tess$floor)
@@ -467,7 +466,7 @@ vfplotsens <- function(gpar, vf, maxval, digits = 0, ...) {
   text(gpar$coord$x, gpar$coord$y, txt, col = tcol, ...)
 }
 
-# plot deviation values
+#' @noRd
 vfplotdev <- function(gpar, vf, dev, devp, digits = 0, ...) {
   # background colors and foreground text gray shades
   cols <- gpar$colmap$fun(vf, devp)
@@ -490,7 +489,7 @@ vfplotdev <- function(gpar, vf, dev, devp, digits = 0, ...) {
   text(gpar$coord$x, gpar$coord$y, txt, col = rgb(0.3, 0.3, 0.3), ...)
 }
 
-# hybrid plot with sensitivities and deviation values
+#' @noRd
 vfplotsdev <- function(gpar, vf, maxval, dev, devp, digits = 0, ...) {
   # background gray shades
   fcol <- (vf - gpar$tess$floor) / (maxval - gpar$tess$floor)
@@ -526,7 +525,7 @@ vfplotsdev <- function(gpar, vf, maxval, dev, devp, digits = 0, ...) {
   text(gpar$coord$x, gpar$coord$y, txt, col = tcol, ...)
 }
 
-# lego plot with sensitivity values
+#' @noRd
 vflegoplotsens <- function(gpar, vfb, vfl, maxb, maxl, crad = 2, digits = 1, ...) {
   bs <- getlocmap()$bs
   # baseline grayscale
@@ -573,7 +572,7 @@ vflegoplotsens <- function(gpar, vfb, vfl, maxb, maxl, crad = 2, digits = 1, ...
   text(coord$x, coord$y, txt, col = tcol, ...)
 }
 
-# lego plot with deviation values
+#' @noRd
 vflegoplotdev <- function(gpar, vfb, devb, devpb, vfl, devl, devpl, crad = 2, digits = 1, ...) {
   bs <- getlocmap()$bs
   # baseline colors

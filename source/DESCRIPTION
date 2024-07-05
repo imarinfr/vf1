@@ -1,8 +1,8 @@
 Package: visualFields
 Type: Package
 Title: Statistical Methods for Visual Fields
-Version: 1.0.2
-Date: 2022-04-01
+Version: 1.0.3
+Date: 2024-07-05
 Authors@R: c(
     person("Ivan", "Marin-Franch", email="imarinfr@optocom.es", role = c("cre", "aut", "rev", "cph")),
     person("William H", "Swanson", role = c("fnd", "dtc")),
@@ -27,4 +27,4 @@ Imports: Hmisc, dplyr, polyclip, deldir, plotrix, gtools, combinat, XML, oro.dic
 LazyData: true
 LazyDataCompression: xz
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2

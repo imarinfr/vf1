@@ -323,6 +323,7 @@ vfspashiny <- function(vf, type = "td", nperm = factorial(7),
 ########################################################
 # internal helper functions for pdf and shiny reports
 ########################################################
+#' @noRd
 mountlayoutsfa <- function() {
   # all the boxes are defined in mm divided by the width and height
   # of the page, also in mm
