@@ -1,7 +1,7 @@
 Package: visualFields
 Type: Package
 Title: Statistical Methods for Visual Fields
-Version: 1.0.3
+Version: 1.0.4
 Date: 2024-07-05
 Authors@R: c(
     person("Ivan", "Marin-Franch", email="imarinfr@optocom.es", role = c("cre", "aut", "rev", "cph")),
