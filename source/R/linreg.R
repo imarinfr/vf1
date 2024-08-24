@@ -23,15 +23,6 @@
 #'     \itemize{
 #'       \item\code{id} patient ID
 #'       \item\code{eye} patient eye
-#'       \item\code{type} type of data analysis. . For \code{glr}, it can be
-#'         `\code{ms}`, `\code{ss}`, `\code{md}`, `\code{sd}`, `\code{pmd}`,
-#'         `\code{psd}`, `\code{vfi}`, or `\code{gh}` for mean sensitivity,
-#'         standard deviation of sensitivities, mean deviation, standard
-#'         deviation of total deviation values, pattern mean deviation, pattern
-#'         standard deviation, VFI, and general height, respectively. For \code{plr}
-#'         and \code{poplr}, it can be `\code{s}`, `\code{td}`, or `\code{pd}` for
-#'         sensitivities, total deviation values, or pattern deviation values,
-#'         respectively
 #'       \item\code{testSlope} slope for \code{glr} or list of slopes for \code{plr}
 #'         to test as null hypotheses
 #'       \item\code{nvisits} number of visits
@@ -54,7 +45,7 @@
 #'   }
 #'   \item{\code{poplr} returns a list with the following additional fields
 #'     \itemize{
-#'       \item\code{csl} the modifed Fisher's S-statistic for the left-tailed permutation test
+#'       \item\code{csl} the modified Fisher's S-statistic for the left-tailed permutation test
 #'       \item\code{cslp} the p-value for the left-tailed permutation test
 #'       \item\code{csr} the modifed Fisher's S-statistic for the right-tailed permutation test
 #'       \item\code{csrp} the p-value for the right-tailed permutation test
@@ -72,6 +63,14 @@
 #'     }
 #'   }
 #' }
+#' @param g a data.frame with date on the first column and the value of the
+#'        global index on the second column
+#' @param testSlope slope, or slopes, to test as null hypothesis. Default is 0.
+#'   if a single value, then the same null hypothesis is used for all locations.
+#'   If a vector of values, then (for \code{plr} and \code{poplr}) each
+#'   location of the visual field will have a different null hypothesis. The length of
+#'   testSlope must be 1 or equal to the number of locations to be used in the PLR or
+#'   PoPLR analysis
 #' @references
 #' N. O'Leary, B. C. Chauhan, and P. H. Artes. \emph{Visual field progression in
 #' glaucoma: estimating the overall significance of deterioration with permutation
@@ -79,56 +78,25 @@
 #' and Visual Science, 53, 2012
 #' @examples
 #' vf <- vffilter(vfpwgRetest24d2, id == 1) # select one patient
-#' res <- glr(getgl(vf)) # linear regression with global indices
-#' res <- plr(vf)   # pointwise linear regression (PLR) with TD values
-#' res <- poplr(vf) # Permutation of PLR with TD values
-#' @param g global indices
-#' @param type type of analysis. For \code{glr}, it can be `\code{ms}`, `\code{ss}`,
-#' `\code{md}`, `\code{sd}`, `\code{pmd}`, `\code{psd}`, `\code{vfi}`, or `\code{gh}`
-#'   for mean sensitivity, standard deviation of sensitivities, mean deviation,
-#'   standard deviation of total deviation values, pattern mean deviation, pattern
-#'   standard deviation, VFI, and general height, respectively. For \code{plr} and
-#'   \code{poplr}, it can be `\code{s}`, `\code{td}`, or `\code{pd}` for sensitivities,
-#'   total deviation values, or pattern deviation values, respectively
-#' @param testSlope slope, or slopes, to test as null hypothesis. Default is 0.
-#'   if a single value, then the same null hypothesis is used for all locations.
-#'   If a vector of values, then (for \code{plr} and \code{poplr}) each
-#'   location of the visual field will have a different null hypothesis. The length of
-#'   testSlope must be 1 or equal to the number of locations to be used in the PLR or
-#'   PoPLR analysis
+#' res <- glr(getgl(vf)[,c("date", "tmd")]) # linear regression with mean deviation (MD)
+#' res <- plr(gettd(vf))   # pointwise linear regression (PLR) with TD values
+#' res <- poplr(gettd(vf)) # Permutation of PLR with TD values
 #' @export
-glr <- function(g, type = "md", testSlope = 0) {
-  if(nrow(unique(data.frame(g$id, g$eye))) != 1)
-    stop("all visual fields must belong to the same subject id and eye")
-  g  <- vfsort(g) # sort just in case
-  years <- as.numeric(g$date - g$date[1]) / 365.25 # it should be difference in years from baseline date
-  if(type == "ms") {
-    y <- g$msens
-  } else if(type == "ss") {
-    y <- g$ssens
-  } else if(type == "md") {
-    y <- g$tmd
-  } else if(type == "sd") {
-    y <- g$tsd
-  } else if(type == "pmd") {
-    y <- g$pmd
-  } else if(type == "psd") {
-    y <- g$psd
-  } else if(type == "gh") {
-    y <- g$gh
-  } else if(type == "vfi") {
-    y <- g$vfi
-  } else stop("wrong type of analysis. It must be 'ms', 'ss', 'md', 'sd', 'pmd', 'psd', 'gh', or 'vfi'")
+glr <- function(g, testSlope = 0) {
+  years <- as.numeric(g[,1] - g[1,1]) / 365.25 # it should be difference in years from baseline date
+  y <- g[,2]
+  y <- y[order(years)] # sort just in case
+  years <- years[order(years)]
   nvisits <- length(y)
   precision <- 1e-6
-  X       <- matrix(c(rep(1, length(years)), years), nvisits, 2)
-  ssvf    <- (nvisits - 1 ) * var(y)
+  X <- matrix(c(rep(1, length(years)), years), nvisits, 2)
+  ssvf <- (nvisits - 1 ) * var(y)
   ssyears <- (nvisits - 1) * var(years)
   kvyears <- (nvisits - 2) * ssyears
   reg <- t(solve(t(X) %*% X) %*% t(X) %*% y)
   int <- reg[1]
-  sl  <- reg[2]
-  v   <- (ssvf - ssyears * sl^2) / kvyears
+  sl <- reg[2]
+  v <- (ssvf - ssyears * sl^2) / kvyears
   v[v < 0] <- 0
   se <- sqrt(v)
   if(sd(y) <= precision) {
@@ -139,8 +107,7 @@ glr <- function(g, type = "md", testSlope = 0) {
   tval <- (sl - testSlope) / se
   pval <- pt(tval, nvisits - 2)
   pred <- sl * years + int
-  if(type == "sd" || type == "psd") pval <- 1 - pval
-  return(list(id = g$id[1], eye = g$eye[1], type = type, testSlope = testSlope,
+  return(list(id = g$id[1], eye = g$eye[1], testSlope = testSlope,
               nvisits = nvisits, dates = g$date, years = years, data = y, pred = pred,
               sl = sl, int = int, se = se, tval = tval, pval = pval))
 }
@@ -148,29 +115,24 @@ glr <- function(g, type = "md", testSlope = 0) {
 #' @rdname linreg
 #' @param vf visual fields sensitivity data
 #' @export
-plr <- function(vf, type = "td", testSlope = 0) {
+plr <- function(vf, testSlope = 0) {
   if(nrow(unique(data.frame(vf$id, vf$eye))) != 1)
     stop("all visual fields must belong to the same subject id and eye")
   vf <- vfsort(vf) # sort just in case
+  nvisits <- nrow(vf)
   years <- as.numeric(vf$date - vf$date[1]) / 365.25 # it should be difference in years from baseline date
   bs <- getlocmap()$bs
-  if(type == "td") {
-    vf <- gettd(vf)
-  } else if(type == "pd") {
-    vf <- getpd(gettd(vf))
-  } else if(type != "s") stop("wrong type of analysis. It must be 's', 'td', or 'pd'")
-  nvisits <- nrow(vf)
   y <- vf[,getvfcols()]
   y[,bs] <- NA # ignore blind spot locations in the analysis
   precision <- 1e-6
-  X       <- matrix(c(rep(1, length(years)), years), nvisits, 2)
-  ssvf    <- (nvisits - 1 ) * apply(y, 2, var)
+  X <- matrix(c(rep(1, length(years)), years), nvisits, 2)
+  ssvf <- (nvisits - 1 ) * apply(y, 2, var)
   ssyears <- (nvisits - 1) * var(years)
   kvyears <- (nvisits - 2) * ssyears
   reg <- t(solve(t(X) %*% X) %*% t(X) %*% as.matrix(y))
   int <- t(reg[,1])
-  sl  <- t(reg[,2])
-  v   <- (ssvf - ssyears * sl^2) / kvyears
+  sl <- t(reg[,2])
+  v <- (ssvf - ssyears * sl^2) / kvyears
   v[v < 0] <- 0
   se <- sqrt(v)
   # get the locations for which sensitivity did not change
@@ -183,14 +145,14 @@ plr <- function(vf, type = "td", testSlope = 0) {
   tval <- (sl - testSlope) / se
   pval <- pt(tval, nvisits - 2)
   # convert all to data frames and assign the corresponding column names, then return
-  sl   <- as.data.frame(sl)
-  int  <- as.data.frame(int)
-  se   <- as.data.frame(se)
+  sl <- as.data.frame(sl)
+  int <- as.data.frame(int)
+  se <- as.data.frame(se)
   tval <- as.data.frame(tval)
   pval <- as.data.frame(pval)
   # predicted values
   pred <- sapply(as.list(rbind(int, sl)), function(beta) {beta[1] + beta[2] * years})
-  return(list(id = vf$id[1], eye = vf$eye[1], type = type, testSlope = testSlope,
+  return(list(id = vf$id[1], eye = vf$eye[1], testSlope = testSlope,
               nvisits = nvisits, dates = vf$date, years = years, data = vf[,getvfcols()], pred = pred,
               sl = sl, int = int, se = se, tval = tval, pval = pval))
 }
@@ -204,18 +166,13 @@ plr <- function(vf, type = "td", testSlope = 0) {
 #' only 120.)
 #' @param trunc truncation value for the Truncated Product Method (see reference)
 #' @export
-poplr <- function(vf, type = "td", testSlope = 0, nperm = factorial(7), trunc = 1) {
+poplr <- function(vf, testSlope = 0, nperm = factorial(7), trunc = 1) {
   if(nrow(unique(data.frame(vf$id, vf$eye))) != 1)
     stop("all visual fields must belong to the same subject id and eye")
   vf <- vfsort(vf) # sort just in case
+  nvisits <- nrow(vf)
   years <- as.numeric(vf$date - vf$date[1]) / 365.25 # it should be difference in years from baseline date
   bs <- getlocmap()$bs
-  if(type == "td") {
-    vf <- gettd(vf)
-  } else if(type == "pd") {
-    vf <- getpd(gettd(vf))
-  } else if(type != "s") stop("wrong type of analysis. It must be 's', 'td', or 'pd'")
-  nvisits <- nrow(vf)
   y <- vf[,getvfcols()]
   y[,bs] <- NA # ignore blind spot locations in the analysis
   if(nvisits < 7) warning("random permutation analysis may be imprecise with less than 7 visual fields")
@@ -242,7 +199,7 @@ poplr <- function(vf, type = "td", testSlope = 0, nperm = factorial(7), trunc = 
   cstats <- poplrsstats(pval, trunc = trunc)
   # predicted values
   pred <- sapply(as.list(rbind(pstats$int, pstats$sl)), function(beta) {beta[1] + beta[2] * years})
-  return(list(id = vf$id[1], eye = vf$eye[1], type = type, testSlope = testSlope,
+  return(list(id = vf$id[1], eye = vf$eye[1], testSlope = testSlope,
               nvisits = nvisits, dates = vf$date, years = years, data = vf[,getvfcols()], pred = pred,
               sl = pstats$sl, int = pstats$int, se = pstats$se, tval = pstats$tval,
               pval = pstats$pval, nperm = nperm,

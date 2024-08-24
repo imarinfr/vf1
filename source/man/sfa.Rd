@@ -5,12 +5,24 @@
 \alias{vfsfashiny}
 \title{Single Field Reporting}
 \usage{
-vfsfa(vf, file, ...)
+vfsfa(vf, td = NULL, tdp = NULL, pd = NULL, pdp = NULL, file, ...)
 
 vfsfashiny(vf, ...)
 }
 \arguments{
 \item{vf}{visual field data}
+
+\item{td}{the total deviation values. If \code{NULL} (default) then use
+visualFields normative values}
+
+\item{tdp}{the total deviation probability values. If \code{NULL} (default)
+then use visualFields normative values}
+
+\item{pd}{the pattern deviation values. If \code{NULL} (default) then use
+visualFields normative values}
+
+\item{pdp}{the pattern deviation probability values. If \code{NULL} (default)
+then use visualFields normative values}
 
 \item{file}{The pdf file name where to save the one-page reports of single field analysis}
 

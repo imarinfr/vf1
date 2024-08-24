@@ -188,6 +188,14 @@ vfprogcolscheme <- function(probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 1),
 
 #' @rdname vfplots
 #' @param vf the visual fields data to plot
+#' @param td the total deviation values. If \code{NULL} (default) then use
+#'           visualFields normative values
+#' @param tdp the total deviation probability values. If \code{NULL} (default)
+#'            then use visualFields normative values
+#' @param pd the pattern deviation values. If \code{NULL} (default) then use
+#'           visualFields normative values
+#' @param pdp the pattern deviation probability values. If \code{NULL} (default)
+#'            then use visualFields normative values
 #' @param type the type of data to plot: sensitivities (`\code{s}`),
 #' total deviation values (`\code{td}`), pattern deviation values (`\code{pd}`),
 #' a hybrid plot that shows sensitivity grayscale with TD values and corresponding
@@ -209,7 +217,7 @@ vfprogcolscheme <- function(probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 1),
 #' vfplot(vfselect(vffilter(vfpwgRetest24d2, id == 1), n = 1), type = "pds")
 #' @return \code{vfplot} No return value
 #' @export
-vfplot <- function(vf, type = "td", ...) {
+vfplot <- function(vf, td = NULL, tdp = NULL, pd = NULL, pdp = NULL, type = "td", ...) {
   if(nrow(vf) != 1) stop("can plot only 1 visual field at a time")
   if(!vfisvalid(vf)) stop("incorrect visual field data structure. Cannot plot")
   nv   <- getnv()   # get normative values
@@ -230,11 +238,15 @@ vfplot <- function(vf, type = "td", ...) {
     vfplotsens(gpar, vf[,locs], maxdb, ...)
   else { # TD, PD or hybrid plots
     if(type %in% c("td", "tds")) {
-      dev  <- gettd(vf)
-      devp <- gettdp(dev)
+      if(is.null(td)) dev  <- gettd(vf)
+      else dev <- td
+      if(is.null(tdp)) devp <- gettdp(dev)
+      else devp <- tdp
     } else if(type %in% c("pd", "pds")) {
-      dev  <- getpd(gettd(vf))
-      devp <- getpdp(dev)
+      if(is.null(pd)) dev  <- getpd(gettd(vf))
+      else dev <- pd
+      if(is.null(pdp)) devp <- getpdp(dev)
+      else devp <- pdp
     } else stop("wrong type of plot requested. Must be 's', 'td', 'pd', 'td', or 'pds'")
     if(type %in% c("td", "pd"))
       vfplotdev(gpar, vf[,locs], dev[,locs], devp[,locs], ...)
@@ -257,16 +269,16 @@ vfplot <- function(vf, type = "td", ...) {
 #' # plot results from pointwise linear regression for the series of
 #' # visual fields for the right eye in the dataset vfpwgSunyiu24d2
 #' # with sensitivity values
-#' vfplotplr(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "s")
+#' vfplotplr(vffilter(vfpwgSunyiu24d2, eye == "OD"))
 #' # TD values
-#' vfplotplr(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "td")
+#' vfplotplr(gettd(vffilter(vfpwgSunyiu24d2, eye == "OD")))
 #' # PD values
-#' vfplotplr(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
+#' vfplotplr(getpd(gettd(vffilter(vfpwgSunyiu24d2, eye == "OD"))))
 #' @return \code{vfplotplr} No return value
 #' @export
-vfplotplr <- function(vf, type = "td", alternative = "LT", xoffs = 0, yoffs = 0,
+vfplotplr <- function(vf, alternative = "LT", xoffs = 0, yoffs = 0,
                       addSpark = FALSE, thr = 2, width = 4, height = 2, ...) {
-  res <- plr(vf, type) # if more than 1 ID/eye then it crashes as it should
+  res <- plr(vf)
   gpar <- getgpar() # get graphical parameters
   # left or right eye
   if(vf$eye[1] == "OS") gpar$tess$xlim <- gpar$tess$xlim[2:1]
@@ -299,7 +311,7 @@ vfplotplr <- function(vf, type = "td", alternative = "LT", xoffs = 0, yoffs = 0,
   # outer hull
   polygon(gpar$tess$hull, border = "lightgray")
   text(gpar$coord$x + xoffs, gpar$coord$y + yoffs, sl, col = rgb(0.3, 0.3, 0.3), ...)
-  if(addSpark) vfsparklines(vf, type, thr, width, height, add = TRUE, ...)
+  if(addSpark) vfsparklines(vf, thr, width, height, add = TRUE, ...)
 }
 
 #' @rdname vfplots
@@ -348,7 +360,11 @@ vflegoplot <- function(vf, type = "td", grp = 3, addSpark = FALSE, thr = 2, widt
                   vfb[,locs], devb[,locs], devbp[,locs],
                   vfl[,locs], devl[,locs], devlp[,locs], ...)
   }
-  if(addSpark) vfsparklines(vf, type, thr, width, height, add = TRUE, ...)
+  if(addSpark) {
+    if(type == "td") vfsparklines(gettd(vf), thr, width, height, add = TRUE, ...)
+    else if(type == "pd") vfsparklines(getpd(gettd(vf)), thr, width, height, add = TRUE, ...)
+    else vfsparklines(vf, thr, width, height, add = TRUE, ...)
+  }
 }
 
 #' @rdname vfplots
@@ -366,29 +382,21 @@ vflegoplot <- function(vf, type = "td", grp = 3, addSpark = FALSE, thr = 2, widt
 #' # sparklines for the series of visual fields for the right eye of
 #' # the subject in the dataset vfpwgSunyiu24d2
 #' # with sensitivity values
-#' vfsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "s")
+#' vfsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"))
 #' # TD values
-#' vfsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "td")
+#' vfsparklines(gettd(vffilter(vfpwgSunyiu24d2, eye == "OD")))
 #' # PD values
-#' vfsparklines(vffilter(vfpwgSunyiu24d2, eye == "OD"), type = "pd")
+#' vfsparklines(getpd(gettd(vffilter(vfpwgSunyiu24d2, eye == "OD"))))
 #' @return \code{vfsparklines} No return value
 #' @export
-vfsparklines <- function(vf, type = "td", thr = 2, width = 4,
-                         height = 2, add = FALSE, ...) {
+vfsparklines <- function(vf, thr = 2, width = 4, height = 2, add = FALSE, ...) {
   if(nrow(unique(data.frame(vf$id, vf$eye))) != 1)
     stop("all visual fields must belong to the same subject id and eye")
-  nv   <- getnv()
+  nv <- getnv()
   gpar <- getgpar() # get graphical parameters
-  locs <- getlocini():ncol(vf)
   # left or right eye
   x <- as.numeric(vf$date - vf$date[1]) / 365.25 # it should be difference in years from baseline date
-  if(type == "s") {
-    y <- vf[,locs]
-  } else if(type == "td") {
-    y <- gettd(vf)[,locs]
-  } else if(type == "pd") {
-    y <- getpd(gettd(vf))[,locs]
-  } else stop("wrong type of plot requested. Must be 's', 'td', or 'pd'")
+  y <- vf[,getlocini():ncol(vf)]
   # remove blind spot locations
   if(length(getlocmap()$bs) > 0) {
     gpar$coord <- gpar$coord[-getlocmap()$bs,]

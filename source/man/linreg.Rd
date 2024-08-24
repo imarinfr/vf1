@@ -6,22 +6,15 @@
 \alias{poplr}
 \title{Global and pointwise linear regression analyses}
 \usage{
-glr(g, type = "md", testSlope = 0)
+glr(g, testSlope = 0)
 
-plr(vf, type = "td", testSlope = 0)
+plr(vf, testSlope = 0)
 
-poplr(vf, type = "td", testSlope = 0, nperm = factorial(7), trunc = 1)
+poplr(vf, testSlope = 0, nperm = factorial(7), trunc = 1)
 }
 \arguments{
-\item{g}{global indices}
-
-\item{type}{type of analysis. For \code{glr}, it can be `\code{ms}`, `\code{ss}`,
-`\code{md}`, `\code{sd}`, `\code{pmd}`, `\code{psd}`, `\code{vfi}`, or `\code{gh}`
-  for mean sensitivity, standard deviation of sensitivities, mean deviation,
-  standard deviation of total deviation values, pattern mean deviation, pattern
-  standard deviation, VFI, and general height, respectively. For \code{plr} and
-  \code{poplr}, it can be `\code{s}`, `\code{td}`, or `\code{pd}` for sensitivities,
-  total deviation values, or pattern deviation values, respectively}
+\item{g}{a data.frame with date on the first column and the value of the
+global index on the second column}
 
 \item{testSlope}{slope, or slopes, to test as null hypothesis. Default is 0.
 if a single value, then the same null hypothesis is used for all locations.
@@ -47,15 +40,6 @@ only 120.)}
     \itemize{
       \item\code{id} patient ID
       \item\code{eye} patient eye
-      \item\code{type} type of data analysis. . For \code{glr}, it can be
-        `\code{ms}`, `\code{ss}`, `\code{md}`, `\code{sd}`, `\code{pmd}`,
-        `\code{psd}`, `\code{vfi}`, or `\code{gh}` for mean sensitivity,
-        standard deviation of sensitivities, mean deviation, standard
-        deviation of total deviation values, pattern mean deviation, pattern
-        standard deviation, VFI, and general height, respectively. For \code{plr}
-        and \code{poplr}, it can be `\code{s}`, `\code{td}`, or `\code{pd}` for
-        sensitivities, total deviation values, or pattern deviation values,
-        respectively
       \item\code{testSlope} slope for \code{glr} or list of slopes for \code{plr}
         to test as null hypotheses
       \item\code{nvisits} number of visits
@@ -78,7 +62,7 @@ only 120.)}
   }
   \item{\code{poplr} returns a list with the following additional fields
     \itemize{
-      \item\code{csl} the modifed Fisher's S-statistic for the left-tailed permutation test
+      \item\code{csl} the modified Fisher's S-statistic for the left-tailed permutation test
       \item\code{cslp} the p-value for the left-tailed permutation test
       \item\code{csr} the modifed Fisher's S-statistic for the right-tailed permutation test
       \item\code{csrp} the p-value for the right-tailed permutation test
@@ -119,9 +103,9 @@ Functions that compute global and pointwise linear regression analyses:
 }
 \examples{
 vf <- vffilter(vfpwgRetest24d2, id == 1) # select one patient
-res <- glr(getgl(vf)) # linear regression with global indices
-res <- plr(vf)   # pointwise linear regression (PLR) with TD values
-res <- poplr(vf) # Permutation of PLR with TD values
+res <- glr(getgl(vf)[,c("date", "tmd")]) # linear regression with mean deviation (MD)
+res <- plr(gettd(vf))   # pointwise linear regression (PLR) with TD values
+res <- poplr(gettd(vf)) # Permutation of PLR with TD values
 }
 \references{
 N. O'Leary, B. C. Chauhan, and P. H. Artes. \emph{Visual field progression in

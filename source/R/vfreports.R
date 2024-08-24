@@ -8,15 +8,23 @@
 #'     analyses based on Shiny
 #' }
 #' @param vf visual field data
+#' @param td the total deviation values. If \code{NULL} (default) then use
+#'           visualFields normative values
+#' @param tdp the total deviation probability values. If \code{NULL} (default)
+#'            then use visualFields normative values
+#' @param pd the pattern deviation values. If \code{NULL} (default) then use
+#'           visualFields normative values
+#' @param pdp the pattern deviation probability values. If \code{NULL} (default)
+#'            then use visualFields normative values
 #' @param file The pdf file name where to save the one-page reports of single field analysis
 #' @param ... other graphical arguments
 #' @return No return value
 #' @export
-vfsfa <- function(vf, file, ...) {
+vfsfa <- function(vf, td = NULL, tdp = NULL, pd = NULL, pdp = NULL, file, ...) {
   # always sort by ID, eye, date, and time
   vf <- vfsort(vf)
   defmar <- par("mar") # read default par
-  defps  <- par("ps")
+  defps <- par("ps")
   on.exit(par(mar = defmar, ps = defps)) # reset default par on exit, even if the code crashes
   pdf(file, width = 8.27, height = 11.69)
   par(mar = c(0, 0, 0, 0))
@@ -37,11 +45,11 @@ vfsfa <- function(vf, file, ...) {
     screen(scrlist$coltxt)
     text(0.50, 1, "Color Scale", adj = c(0.5, 1), font = 2)
     screen(scrlist$vf)
-    vfplot(vfiter, "s", mar = c(0, 0, 0, 0), ps = 8)
+    vfplot(vfiter, td = td, tdp = tdp, pd = pd, pdp = pdp, type = "s", mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$td)
-    vfplot(vfiter, "tds", mar = c(0, 0, 0, 0), ps = 8)
+    vfplot(vfiter, td = td, tdp = tdp, pd = pd, pdp = pdp, type = "tds", mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$pd)
-    vfplot(vfiter, "pd", mar = c(0, 0, 0, 0), ps = 8)
+    vfplot(vfiter, td = td, tdp = tdp, pd = pd, pdp = pdp, type = "pd", mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$col)
     drawcolscalesfa(getgpar()$colmap$map$probs, getgpar()$colmap$map$cols, ps = 6, ...)
     screen(scrlist$foot)
@@ -118,7 +126,7 @@ vfspa <- function(vf, file, type = "td", nperm = factorial(7),
     text(0.50, 1, "General Height (GH)", adj = c(0.5, 1), font = 2)
     screen(scrlist$int)
     vfint <- vfselect(vfeye, sel = 1) # get first
-    vfint[,getvfcols()] <- plr(vfeye, type = "s")$int
+    vfint[,getvfcols()] <- plr(vfeye)$int
     vfplot(vfint, type = "tds", mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$sl)
     vfplotplr(vfeye, type, mar = c(0, 0, 0, 0), ps = 8)
@@ -243,7 +251,6 @@ vfspashiny <- function(vf, type = "td", nperm = factorial(7),
   vfeye <- unique(data.frame(id = vf$id, eye = vf$eye, stringsAsFactors = FALSE))
   # run regression analyses
   res <- runregressions(vf, type, nperm, trunc, testSlope)
-
   ui <- fluidPage(
     titlePanel("Series Progression Analysis"),
     sidebarLayout(
@@ -255,8 +262,8 @@ vfspashiny <- function(vf, type = "td", nperm = factorial(7),
       mainPanel(
         column(12, align = "center", htmlOutput("info")),
         tabsetPanel(type = "pills",
-          tabPanel("Baseline",   plotOutput("bas"), plotOutput("cbas", height = "60px")),
-          tabPanel("PLR",        plotOutput("plr"), plotOutput("cplr", height = "60px")),
+          tabPanel("Baseline", plotOutput("bas"), plotOutput("cbas", height = "60px")),
+          tabPanel("PLR", plotOutput("plr"), plotOutput("cplr", height = "60px")),
           tabPanel("Sparklines", plotOutput("skl")),
           tabPanel("PoPLR",
             column(width = 12, align = "center",
@@ -299,7 +306,7 @@ vfspashiny <- function(vf, type = "td", nperm = factorial(7),
     # show the baseline plot
     output$bas  <- renderPlot({
       vfint <- vfselect(vfseries(), sel = 1) # get first
-      vfint[,getvfcols()] <- plr(vfseries(), type = "s")$int
+      vfint[,getvfcols()] <- plr(vfseries())$int
       vfplot(vfint, type = "tds", mar = c(0, 0, 0, 0))
     })
     # show the pointwise linear regression plot
@@ -412,18 +419,18 @@ fillinfosfa <- function(vf) {
   g  <- getgl(vf)
   gp <- getglp(g)
   # format global indices
-  ms   <- ifelse(isnotempty(g$msens),  paste(round(g$msens, 1), "dB"), "")
-  msp  <- ifelse(isnotempty(gp$msens), paste0("(p < ", gp$msens, ")"), "")
-  md   <- ifelse(isnotempty(g$tmd),    paste(round(g$tmd, 1), "dB"),   "")
-  mdp  <- ifelse(isnotempty(gp$tmd),   paste0("(p < ", gp$tmd, ")"),    "")
-  psd  <- ifelse(isnotempty(g$psd),    paste(round(g$psd, 1), "dB"),   "")
-  psdp <- ifelse(isnotempty(gp$psd),   paste0("(p < ", gp$psd, ")"),    "")
-  vfi  <- ifelse(isnotempty(g$vfi),    paste(round(g$vfi, 1), "%"),   "")
-  vfip <- ifelse(isnotempty(gp$vfi),   paste0("(p < ", gp$vfi, ")"),    "")
+  ms  <- ifelse(isnotempty(g$msens), paste(round(g$msens, 1), "dB"), "")
+  msp <- ifelse(isnotempty(gp$msens), paste0("(p < ", gp$msens, ")"), "")
+  md <- ifelse(isnotempty(g$tmd), paste(round(g$tmd, 1), "dB"),   "")
+  mdp <- ifelse(isnotempty(gp$tmd), paste0("(p < ", gp$tmd, ")"),    "")
+  psd <- ifelse(isnotempty(g$psd), paste(round(g$psd, 1), "dB"),   "")
+  psdp <- ifelse(isnotempty(gp$psd), paste0("(p < ", gp$psd, ")"),    "")
+  vfi <- ifelse(isnotempty(g$vfi), paste(round(g$vfi, 1), "%"),   "")
+  vfip <- ifelse(isnotempty(gp$vfi), paste0("(p < ", gp$vfi, ")"),    "")
   # format reliability indices
   fpr <- ifelse(isnotempty(vf$fpr), paste(round(100 * vf$fpr), "%"), "")
   fnr <- ifelse(isnotempty(vf$fnr), paste(round(100 * vf$fnr), "%"), "")
-  fl  <- ifelse(isnotempty(vf$fl),  paste(round(100 * vf$fl), "%"),  "")
+  fl <- ifelse(isnotempty(vf$fl), paste(round(100 * vf$fl), "%"),  "")
   # print in the pdf file
   rect(0, 0, 1, 1, col = "#F6F6F6", border = NA)
   text(0.50, 0.98, "Patient Information", adj = c(0.5, 1), cex = 1.2, font = 2)
@@ -445,24 +452,24 @@ fillinfospa <- function(res, type, nperm, trunc, testSlope) {
   # format global regression results
   # mean sensitivity
   msint <- format(round(res$ms$int, 1),  nsmall = 1)
-  mssl  <- format(round(res$ms$sl, 2),   nsmall = 2)
-  msp   <- format(round(res$ms$pval, 3), nsmall = 1)
+  mssl <- format(round(res$ms$sl, 2),   nsmall = 2)
+  msp <- format(round(res$ms$pval, 3), nsmall = 1)
   idxp <- which(mssl >= 0)
   idxn <- which(mssl < 0)
   mssl[idxp] <- paste("+", mssl[idxp])
   mssl[idxn] <- paste("-", substr(mssl[idxn], 2, nchar(mssl[idxn])))
   # mean deviation
   mdint <- format(round(res$md$int, 1),  nsmall = 1)
-  mdsl  <- format(round(res$md$sl, 2),   nsmall = 2)
-  mdp   <- format(round(res$md$pval, 3), nsmall = 1)
+  mdsl <- format(round(res$md$sl, 2),   nsmall = 2)
+  mdp <- format(round(res$md$pval, 3), nsmall = 1)
   idxp <- which(mdsl >= 0)
   idxn <- which(mdsl < 0)
   mdsl[idxp] <- paste("+", mdsl[idxp])
   mdsl[idxn] <- paste("-", substr(mdsl[idxn], 2, nchar(mdsl[idxn])))
   # general height
   ghint <- format(round(res$gh$int, 1),  nsmall = 1)
-  ghsl  <- format(round(res$gh$sl, 2),   nsmall = 2)
-  ghp   <- format(round(res$gh$pval, 3), nsmall = 1)
+  ghsl <- format(round(res$gh$sl, 2),   nsmall = 2)
+  ghp <- format(round(res$gh$pval, 3), nsmall = 1)
   idxp <- which(ghsl >= 0)
   idxn <- which(ghsl < 0)
   ghsl[idxp] <- paste("+", ghsl[idxp])
@@ -581,10 +588,11 @@ runregressions <- function(vf, type, nperm, trunc, testSlope) {
   res <- lapply(1:nrow(uid), function(i) {
     vfiter <- vffilter(vf, !!sym("id") == uid$id[i], !!sym("eye") == uid$eye[i])
     g  <- getgl(vfiter)
-    ms <- glr(g, type = "ms", testSlope = testSlope)
-    md <- glr(g, type = "md", testSlope = testSlope)
-    gh <- glr(g, type = "gh", testSlope = testSlope)
-    res <- poplr(vfiter, type = type, nperm = nperm, trunc = trunc, testSlope = testSlope)
+    ms <- glr(g[,c("date", "msens")], testSlope = testSlope)
+    md <- glr(g[,c("date", "tmd")], testSlope = testSlope)
+    gh <- glr(g[,c("date", "gh")], testSlope = testSlope)
+    vals <- switch(type, "s" = vfiter, "td" = gettd(vfiter), "pd" = getpd(gettd(vfiter)))
+    res <- poplr(vals, nperm = nperm, trunc = trunc, testSlope = testSlope)
     setTxtProgressBar(pb, i)
     return(list(id = uid$id[i], eye = as.character(uid$eye[i]),
                 dateStart = vfiter$date[1], dateEnd = vfiter$date[res$nvisits],
