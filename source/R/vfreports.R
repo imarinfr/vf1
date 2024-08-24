@@ -28,8 +28,8 @@ vfsfa <- function(vf, td = NULL, tdp = NULL, pd = NULL, pdp = NULL, file, ...) {
   on.exit(par(mar = defmar, ps = defps)) # reset default par on exit, even if the code crashes
   pdf(file, width = 8.27, height = 11.69)
   par(mar = c(0, 0, 0, 0))
-  par(ps = 10)
   for(i in 1:nrow(vf)) {
+    par(ps = 10)
     scrlist <- mountlayoutsfa()
     vfiter <- vfselect(vf, i)
     screen(scrlist$title)
@@ -129,11 +129,15 @@ vfspa <- function(vf, file, type = "td", nperm = factorial(7),
     vfint[,getvfcols()] <- plr(vfeye)$int
     vfplot(vfint, type = "tds", mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$sl)
-    vfplotplr(vfeye, type, mar = c(0, 0, 0, 0), ps = 8)
+    vals <- switch(type,
+                   "s" = vfeye,
+                   "td" = gettd(vfeye),
+                   "pd" = getpd(gettd(vfeye)))
+    vfplotplr(vals, mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$col)
     drawcolscalespa(getgpar()$progcolmap$b$map$probs, getgpar()$progcolmap$b$map$cols, ps = 6, ...)
     screen(scrlist$spark)
-    vfsparklines(vfeye, type, mar = c(0, 0, 0, 0), ps = 8)
+    vfsparklines(vals, mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$poplrb)
     drawhist(res[[i]]$poplr, alternative = "GT")
     screen(scrlist$poplrw)
