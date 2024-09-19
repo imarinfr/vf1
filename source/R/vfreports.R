@@ -129,10 +129,7 @@ vfspa <- function(vf, file, type = "td", nperm = factorial(7),
     vfint[,getvfcols()] <- plr(vfeye)$int
     vfplot(vfint, type = "tds", mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$sl)
-    vals <- switch(type,
-                   "s" = vfeye,
-                   "td" = gettd(vfeye),
-                   "pd" = getpd(gettd(vfeye)))
+    vals <- switch(type, "s" = vfeye, "td" = gettd(vfeye), "pd" = getpd(gettd(vfeye)))
     vfplotplr(vals, mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$col)
     drawcolscalespa(getgpar()$progcolmap$b$map$probs, getgpar()$progcolmap$b$map$cols, ps = 6, ...)
