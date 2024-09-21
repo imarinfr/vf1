@@ -18,7 +18,7 @@
 #' This work was supported by the NIH grant number \bold{R01EY007716} and 
 #' the Veterans Administration grant number \bold{I01 RX-001821-01A1}.
 #' @seealso \code{OPI}: the Open Perimetry Initiative
-#' \url{https://people.eng.unimelb.edu.au/aturpin/opi/index.html}
+#' \url{https://opi.lei.org.au/} and \url{https://www.optocom.es/opi/}
 #' @references
 #' Marín-Franch I & Swanson WH. \emph{The visualFields package: A tool for
 #' analysis and visualization of visual fields}. Journal of Vision, 2013,
@@ -167,7 +167,7 @@ setlocini <- function(locini = 11) {
 #' @export
 getvfcols <- function() return(getlocini() - 1 + 1:nrow(getlocmap()$coord))
 
-#' @noRd
+#' @rdname vfenv
 #' @export
 .vfenv <- new.env(parent = globalenv(), size = 3) # create visualFields environment
 

@@ -101,7 +101,7 @@ not equal (NE)}
 \item{bprobs, bcols}{color map for progression with blth alternative
 hypotheses LT and GT (B for both)}
 
-\item{delta}{Distance over which the boundary should be shifted. See for \code{\link{polyclip}}}
+\item{delta}{Distance over which the boundary should be shifted. See for \code{polyclip}}
 
 \item{vf}{the visual fields data to plot}
 

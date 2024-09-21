@@ -114,7 +114,7 @@ vfgpar <- function(coord, tess = vftess(coord),
 
 #' @rdname vfplots
 #' @param floor Flooring value, typically in dB. Default is 0
-#' @param delta Distance over which the boundary should be shifted. See for \code{\link{polyclip}}
+#' @param delta Distance over which the boundary should be shifted. See for \code{polyclip}
 #' @examples
 #' # generate a structure with default tesselation for the 30-2 map
 #' vftess(locmaps$p30d2$coord)

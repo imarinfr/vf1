@@ -222,7 +222,7 @@ pddef <- function(ghfun = ghdef(0.85))
 
 #' @rdname nv
 #' @param type type of estimation for the weighted quantile values. See
-#'   \code{\link{wtd.quantile}} for details. Default is `\code{quantile}`
+#'   \code{wtd.quantile} for details. Default is `\code{quantile}`
 #' @param ... arguments to be passed to or from methods
 #' @return \code{lutdef} returns a look up table and a function for the
 #' computation of the probability values for TD and PD
@@ -231,8 +231,8 @@ lutdef <- function(vf, probs, type = "quantile", ...) {
   counts <- table(vf$id)
   w <- as.numeric(1 / rep(counts, counts))
   vf <- vf[,getvfcols()] # remove info fields
-  nacols <- which(apply(is.na(vf), 2, all)) # awkward patch because wtd.quantile
-  vf[,nacols] <- 0                          # does not tolerate columns with NA
+  nacols <- which(apply(is.na(vf), 2, all))
+  vf[,nacols] <- 0
   # probability level look up table
   lut <- apply(vf, 2, wtd.quantile, type = type, na.rm = TRUE,
                weights = w, normwt = FALSE, probs = probs, ...)
@@ -317,8 +317,8 @@ lutgdef <- function(g, probs, type = "quantile", ...) {
   counts <- table(g$id)
   w <- as.numeric(1 / rep(counts, counts))
   g <- g[,getlocini():ncol(g)] # remove key fields
-  nacols <- which(apply(is.na(g), 2, all)) # awkward patch because wtd.quantile
-  g[,nacols] <- 0                          # does not tolerate columns with NA
+  nacols <- which(apply(is.na(g), 2, all))
+  g[,nacols] <- 0
   # probability level look up table
   lut <- matrix(NA, length(probs), ncol(g))
   colnames(lut) <- names(g)

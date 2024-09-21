@@ -37,7 +37,7 @@ An enabling tool for clinical visual psychophysics}. Journal of Vision,
 }
 \seealso{
 \code{OPI}: the Open Perimetry Initiative
-\url{https://people.eng.unimelb.edu.au/aturpin/opi/index.html}
+\url{https://opi.lei.org.au/} and \url{https://www.optocom.es/opi/}
 }
 \author{
 \strong{Maintainer}: Ivan Marin-Franch \email{imarinfr@optocom.es} [reviewer, copyright holder]

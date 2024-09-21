@@ -73,7 +73,7 @@ reference for the general height (GH) of the visual field.
 Default is the 85th percentile, thus \code{0.85}}
 
 \item{type}{type of estimation for the weighted quantile values. See
-\code{\link{wtd.quantile}} for details. Default is `\code{quantile}`}
+\code{wtd.quantile} for details. Default is `\code{quantile}`}
 
 \item{...}{arguments to be passed to or from methods}
 
