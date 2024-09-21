@@ -342,7 +342,7 @@ lutgdef <- function(g, probs, type = "quantile", ...) {
     g <- g[,getlocini():ncol(g)]
     gp <- as.data.frame(matrix(NA, nrow(g), ncol(g)))
     names(gp) <- names(g)
-    # analysys for means (greater is better) is different than for SDs (greater is worse)
+      # analysis for means (greater is better) is different than for SDs (greater is worse)
     gm   <- g[,idxm]
     lutm <- lut[,idxm]
     gpm  <- gp[,idxm]
