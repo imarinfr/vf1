@@ -125,9 +125,17 @@ vfspa <- function(vf, file, type = "td", nperm = factorial(7),
     screen(scrlist$ghtxt)
     text(0.50, 1, "General Height (GH)", adj = c(0.5, 1), font = 2)
     screen(scrlist$int)
-    vfint <- vfselect(vfeye, sel = 1) # get first
-    vfint[,getvfcols()] <- plr(vfeye)$int
-    vfplot(vfint, type = "tds", mar = c(0, 0, 0, 0), ps = 8)
+    vfint <- vfselect(vfeye, sel = 1)
+    agenorm <- getnv()$agem$model(vfint$age)
+    gh <- getgh(gettd(vfint))
+    vals <- switch(type, "s" = vfeye, "td" = gettd(vfeye), "pd" = getpd(gettd(vfeye)))
+    vfint[,getvfcols()] <- suppressWarnings(plr(vals)$int)
+    if(type == "pd") {
+      vfint[,getvfcols()] <- vfint[,getvfcols()] - gh
+      vfint[,getvfcols()] <- vfint[,getvfcols()] + agenorm
+    } else if (type == "td")
+      vfint[,getvfcols()] <- vfint[,getvfcols()] + agenorm
+    vfplot(vfint, type = ifelse(type == "td", "tds", type), mar = c(0, 0, 0, 0), ps = 8)
     screen(scrlist$sl)
     vals <- switch(type, "s" = vfeye, "td" = gettd(vfeye), "pd" = getpd(gettd(vfeye)))
     vfplotplr(vals, mar = c(0, 0, 0, 0), ps = 8)
