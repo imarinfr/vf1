@@ -104,12 +104,15 @@
 #' @param tdfun Function for the calculation of total deviation maps
 #' @param ghfun Function to obtain an estimate of the general height
 #' @param pdfun Function for the calculation of pattern deviation maps
+#' @param gweight Whether to compute MD and PSD, etc using
+#'                weighted averages or not. Default is TRUE
 #' @return \code{nvgenerate} returns a list with normative values
 #' @export
 nvgenerate <- function(vf, method = "pointwise",
                        probs = c(0, 0.005, 0.01, 0.02, 0.05, 0.95, 0.98, 0.99, 0.995, 1),
                        name = "", perimetry = "static automated perimetry", strategy = "", size = "",
-                       agem = agelm(vf), tdfun = tddef(agem), ghfun = ghdef(0.85), pdfun = pddef(ghfun)) {
+                       agem = agelm(vf), tdfun = tddef(agem), ghfun = ghdef(0.85), pdfun = pddef(ghfun),
+                       gweight = TRUE) {
   if(method != "pointwise" && method != "smooth")
     stop("wrong method for generating normative values")
   if(any(probs < 0) || any(probs > 1))
@@ -146,7 +149,7 @@ nvgenerate <- function(vf, method = "pointwise",
     sdev$pd <- vfsmooth(sdev$pd)
   }
   # define global indices
-  glfun <- gdef(agem, sdev$td, sdev$pd)
+  glfun <- gdef(agem, sdev$td, sdev$pd, gweight = gweight)
   # ... and return them
   gl <- glfun(vf, td, pd, tdp, pdp, ghfun(td))
   # define mapping functions to get probability levels for global indices
@@ -260,7 +263,7 @@ lutdef <- function(vf, probs, type = "quantile", ...) {
 #' @param sdpd standard deviations obtained for PD values
 #' @return \code{gdef} returns a function to compute global indices
 #' @export
-gdef <- function(agem, sdtd, sdpd) {
+gdef <- function(agem, sdtd, sdpd, gweight = TRUE) {
   coord <- getlocmap()$coord
   bs    <- getlocmap()$bs
   if(length(bs) > 0) { # remove blind spot
@@ -268,8 +271,13 @@ gdef <- function(agem, sdtd, sdpd) {
     sdpd  <- sdpd[-bs]
     coord <- coord[-bs,]
   }
-  wtd <- 1 / sdtd
-  wpd <- 1 / sdpd
+  if(gweight) {
+    wtd <- 1 / sdtd
+    wpd <- 1 / sdpd
+  } else {
+    wtd <- rep(1, length(sdtd))
+    wpd <- rep(1, length(sdpd))
+  }
   fun <- as.function(alist(vf = , td = , pd = , tdp = , pdp = , gh = , {
     vfinfo <- vf[,1:(getlocini() - 1)] # keep key to add to the g table later on
     vf     <- vf[,getvfcols()] # remove info columns

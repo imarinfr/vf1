@@ -22,7 +22,8 @@ nvgenerate(
   agem = agelm(vf),
   tdfun = tddef(agem),
   ghfun = ghdef(0.85),
-  pdfun = pddef(ghfun)
+  pdfun = pddef(ghfun),
+  gweight = TRUE
 )
 
 agelm(vf)
@@ -35,7 +36,7 @@ pddef(ghfun = ghdef(0.85))
 
 lutdef(vf, probs, type = "quantile", ...)
 
-gdef(agem, sdtd, sdpd)
+gdef(agem, sdtd, sdpd, gweight = TRUE)
 
 lutgdef(g, probs, type = "quantile", ...)
 }
@@ -67,6 +68,9 @@ locations or empty (default)}
 \item{ghfun}{function used for determination of the GH and PD values}
 
 \item{pdfun}{Function for the calculation of pattern deviation maps}
+
+\item{gweight}{Whether to compute MD and PSD, etc using
+weighted averages or not. Default is TRUE}
 
 \item{perc}{the percentile to obtain the ranked TD value as
 reference for the general height (GH) of the visual field.
