@@ -5,16 +5,22 @@
 #' with a particular angle
 #' @details
 #' \itemize{
-#'   \item\code{cart2jpolar} converts the cartesian coordinates to the polar
+#'   \item\code{cart2polar} convenience function: Cartesian to polar
+#'   \item\code{polar2cart} convenience function: polar to Cartesian
+#'   \item\code{cart2jpolar} converts the Cartesian coordinates to the polar
 #'     coordinates in the distorted space used in the Jansonius map
 #'   \item\code{jpolar2cart} converts back from the Jansonius polar
-#'     coordinates to cartesian coordinates
+#'     coordinates to Cartesian coordinates
+#'   \item\code{jpolar2polar} convenience function: Jansonius polar to polar
+#'   \item\code{polar2jpolar} convenience function: polar to Jansonius polar
 #'   \item\code{bundlePath} returns a function describing the expected fiber
 #'     path given an angle of incidence on the ONH
 #'   \item\code{loc2psi} returns the angle of incidence of the average bundle path
 #'     that passes through specific locations of the visual field
-#'   \item\code{psi2oct} returns the angle of OCT circular scans corresponding
+#'   \item\code{psi2oct} returns the angle of an OCT circular scan corresponding
 #'     to average bundle paths with specific angle of incidence at the ONH
+#'   \item\code{oct2psi} returns the angle of incidence at the ONH corresponding
+#'     to the angle of an OCT circular scans
 #'   \item\code{vf2gc} calculates ganglion-cell soma locations
 #' }
 #' @references
@@ -86,8 +92,8 @@
 #' @return \code{cart2jpolar}: returns the Jansonius modified polar coordinates
 #' @export
 cart2jpolar <- function(coord) {
-  x  <- coord[,1]
-  y  <- coord[,2]
+  x <- coord[,1]
+  y <- coord[,2]
   xp <- x - 15
   yp <- y
   yp[x > 0] <- y[x > 0] - 2 * (x[x > 0] / 15)^2
@@ -97,12 +103,34 @@ cart2jpolar <- function(coord) {
 }
 
 #' @rdname jansonius
+#' @return \code{cart2polar}: returns polar coordinates
+#' @export
+cart2polar <- function(coord) {
+  x <- coord[,1] - 15
+  y <- coord[,2] - 2
+  r <- sqrt(x^2 + y^2)
+  psi <- atan2(y, x) * 180 / pi
+  return(data.frame(r = r, psi = psi))
+}
+
+#' @rdname jansonius
+#' @return \code{polar2cart}: returns Cartesian coordinates
+#' @export
+polar2cart <- function(rpsi) {
+  r <- rpsi[,1]
+  psi <- rpsi[,2] * pi / 180
+  x <- r * cos(psi) + 15
+  y <- r * sin(psi) + 2
+  return(data.frame(x = x, y = y))
+}
+
+#' @rdname jansonius
 #' @param rpsi visual field locations in polar coordinates of the
 #'   distorted space of the Jansonius map
 #' @return \code{jpolar2cart}: returns Cartesian coordinates
 #' @export
 jpolar2cart <- function(rpsi) {
-  r   <- rpsi[,1]
+  r <- rpsi[,1]
   psi <- rpsi[,2]
   psi <- (pi / 180 * psi) %% (2 * pi)
   x <- sqrt(r^2 / (1 + (tan(psi))^2))
@@ -115,6 +143,20 @@ jpolar2cart <- function(rpsi) {
 }
 
 #' @rdname jansonius
+#' @return \code{jpolar2polar}: returns polar coordinates from
+#' Jansonius Polar coordinates
+#' @export
+jpolar2polar <- function(rpsi)
+  return(cart2polar(jpolar2cart(rpsi)))
+
+#' @rdname jansonius
+#' @return \code{jpolar2polar}: returns polar coordinates from
+#' Jansonius Polar coordinates
+#' @export
+polar2jpolar <- function(rpsi)
+  return(cart2jpolar(polar2cart(rpsi)))
+
+#' @rdname jansonius
 #' @param psi0 angle of incidence at the ONH
 #' @param r0 radius of the ONH. Its default value is \code{4}.
 #'   Changing it changes the calculated average bundle paths.
@@ -125,20 +167,13 @@ bundlePath <- function(psi0, r0 = 4) {
      !is.numeric(psi0) || abs(psi0) > 180)
     stop("input argument psi0 must be a numeric scalar from -180 to 180")
   if(psi0 == -180) psi0 <- 180
-  if(psi0 >= 0 & psi0 < 60) {
-    b <- 0.00083 * psi0^2 + 0.020 * psi0 - 2.65
+  if(psi0 >= 0) {
+    if(psi0 >= 60) b <- exp(-1.9 + 3.9 * tanh(-(psi0 - 121) / 14))
+    else b <- 0.00083 * psi0^2 + 0.020 * psi0 - 2.65
     c <- 1.9 + 1.4 * tanh((psi0 - 121) / 14)
-  }
-  if(psi0 >= 60 & psi0 <= 180) {
-    b <- exp(-1.9 + 3.9 * tanh(-(psi0 - 121) / 14))
-    c <- 1.9 + 1.4 * tanh((psi0 - 121) / 14)
-  }
-  if(psi0 > -180 & psi0 <= -60) {
-    b <- -exp(0.7 + 1.5 * tanh(-(-psi0 - 90) / 25))
-    c <- 1.0 + 0.5 * tanh((-psi0 - 90) / 25)
-  }
-  if(psi0 > -60 & psi0 < 0) {
-    b <- 0.00083 * psi0^2 + 0.020 * psi0 - 2.65
+  } else {
+    if(psi0 > -60) b <- 0.00083 * psi0^2 + 0.020 * psi0 - 2.65
+    else b <- -exp(0.7 + 1.5 * tanh(-(-psi0 - 90) / 25))
     c <- 1.0 + 0.5 * tanh((-psi0 - 90) / 25)
   }
   fbfun <- function(r) {
@@ -148,7 +183,7 @@ bundlePath <- function(psi0, r0 = 4) {
 }
 
 #' @rdname jansonius
-#' @param diam diamater in degrees of visual angle of the OCT circular
+#' @param diam diameter in degrees of visual angle of the OCT circular
 #'   scan centered at the center of the ONH
 #' @return \code{loc2psi}: returns the angle of incidence on the ONH
 #' @export
@@ -156,10 +191,12 @@ loc2psi <- function(coord, r0 = 4) {
   coord[,2] <- -coord[,2]
   psi0 <- sapply(split(cart2jpolar(coord), seq(nrow(coord))), function(rpsi) {
     fbpathinv <- function(psi0) {
-    fb <- bundlePath(psi0, r0)
-    psiest <- fb(rpsi$r)
-    return((psiest - rpsi$psi)^2)}
-    optimize(fbpathinv, interval = c(-179.99, 180))$minimum})
+      fb <- bundlePath(psi0, r0)
+      psiest <- fb(rpsi$r)
+      return((psiest - rpsi$psi)^2)
+    }
+    return(optimize(fbpathinv, interval = c(-179.99, 180))$minimum)
+  })
   return(as.numeric(psi0))
 }
 
@@ -169,14 +206,26 @@ loc2psi <- function(coord, r0 = 4) {
 psi2oct <- function(psi0, diam = 12) {
   radius <- diam / 2
   r <- seq(4, 10, 0.001)
-  return(180 / pi * sapply(psi0, function(psi0) {
+  return(sapply(psi0, function(psi0) {
     fb <- bundlePath(psi0)
-    coord <- jpolar2cart(data.frame(r = r, phi = fb(r)))
-    coord <- coord - c(15, 2)
-    coord <- coord[which.min(abs(coord$x^2 + coord$y^2 - radius^2)),]
-    oct <- atan2(coord$y, -coord$x)
-    oct[oct < 0] <- 2 * pi + oct[oct < 0]
-    return(oct)}))
+    psi <- fb(r)
+    rpsi <- jpolar2polar(data.frame(r = r, psi = psi))
+    theta <- rpsi$psi[which.min(abs(rpsi$r - radius))]
+    return((180 - theta) %% 360)
+  }))
+}
+
+#' @rdname jansonius
+#' @param theta cpRNFL scan TSNIT angle
+#' @return \code{oct2psi}: returns the corresponding ONH incidence angle
+#' @export
+oct2psi <- function(theta, diam = 12) {
+  return(sapply(theta, function(p) {
+    finv <- function(p0)
+      return(min(abs(psi2oct(p0, diam) - p)))
+    psi0 <- optimize(finv, interval = c(-179.99, 180))$minimum
+    return(((psi0 + 180) %% 360) - 180)
+  }))
 }
 
 #' @rdname jansonius
@@ -252,3 +301,6 @@ vf2gc <- function(coord, angle = 0) {
   
   return(coord)
 }
+
+#' @noRd
+wrap360 <- function(x) ((x %% 360) + 360) %% 360

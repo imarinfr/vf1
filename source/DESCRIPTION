@@ -1,8 +1,8 @@
 Package: visualFields
 Type: Package
 Title: Statistical Methods for Visual Fields
-Version: 1.0.7
-Date: 2025-01-17
+Version: 1.0.8
+Date: 2026-02-25
 Authors@R: c(
     person("Ivan", "Marin-Franch", email="imarinfr@optocom.es", role = c("cre", "aut", "rev", "cph")),
     person("William H", "Swanson", role = c("fnd", "dtc")),
@@ -21,10 +21,10 @@ Description: A collection of tools for analyzing the field of vision. It
     (2013) <doi:10.1167/13.4.10> and is part of the Open Perimetry Initiative
     (OPI) [Turpin, Artes, and McKendrick (2012) <doi:10.1167/12.11.22>].
 License: Apache License 2.0
-URL: https://www.optocom.es
+URL: https://www.optocom.es/
 Depends: R(>= 3.5)
 Imports: Hmisc, dplyr, polyclip, deldir, plotrix, gtools, combinat, XML, oro.dicom, rlang, shiny, shinyjs, DT, htmlTable, boot, pracma
 LazyData: true
 LazyDataCompression: xz
 Encoding: UTF-8
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3

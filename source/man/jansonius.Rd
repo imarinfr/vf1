@@ -2,22 +2,37 @@
 % Please edit documentation in R/jansonius.R
 \name{cart2jpolar}
 \alias{cart2jpolar}
+\alias{cart2polar}
+\alias{polar2cart}
 \alias{jpolar2cart}
+\alias{jpolar2polar}
+\alias{polar2jpolar}
 \alias{bundlePath}
 \alias{loc2psi}
 \alias{psi2oct}
+\alias{oct2psi}
 \alias{vf2gc}
 \title{The Jansonius map for average path of nerve fiber bundles}
 \usage{
 cart2jpolar(coord)
 
+cart2polar(coord)
+
+polar2cart(rpsi)
+
 jpolar2cart(rpsi)
+
+jpolar2polar(rpsi)
+
+polar2jpolar(rpsi)
 
 bundlePath(psi0, r0 = 4)
 
 loc2psi(coord, r0 = 4)
 
 psi2oct(psi0, diam = 12)
+
+oct2psi(theta, diam = 12)
 
 vf2gc(coord, angle = 0)
 }
@@ -32,21 +47,35 @@ distorted space of the Jansonius map}
 \item{r0}{radius of the ONH. Its default value is \code{4}.
 Changing it changes the calculated average bundle paths.}
 
-\item{diam}{diamater in degrees of visual angle of the OCT circular
+\item{diam}{diameter in degrees of visual angle of the OCT circular
 scan centered at the center of the ONH}
+
+\item{theta}{cpRNFL scan TSNIT angle}
 
 \item{angle}{fovea-disc angle in degrees}
 }
 \value{
 \code{cart2jpolar}: returns the Jansonius modified polar coordinates
 
+\code{cart2polar}: returns polar coordinates
+
+\code{polar2cart}: returns Cartesian coordinates
+
 \code{jpolar2cart}: returns Cartesian coordinates
+
+\code{jpolar2polar}: returns polar coordinates from
+Jansonius Polar coordinates
+
+\code{jpolar2polar}: returns polar coordinates from
+Jansonius Polar coordinates
 
 \code{bundlePath}: returns a function describing a retinal ganglion cell bundle path
 
 \code{loc2psi}: returns the angle of incidence on the ONH
 
 \code{psi2oct}: returns the corresponding angle in the OCT circular scan
+
+\code{oct2psi}: returns the corresponding ONH incidence angle
 
 \code{vf2gc}: returns the ganglion cell soma corresponding to the photoreceptors
                       of a visual field location
@@ -58,16 +87,22 @@ with a particular angle
 }
 \details{
 \itemize{
-  \item\code{cart2jpolar} converts the cartesian coordinates to the polar
+  \item\code{cart2polar} convenience function: Cartesian to polar
+  \item\code{polar2cart} convenience function: polar to Cartesian
+  \item\code{cart2jpolar} converts the Cartesian coordinates to the polar
     coordinates in the distorted space used in the Jansonius map
   \item\code{jpolar2cart} converts back from the Jansonius polar
-    coordinates to cartesian coordinates
+    coordinates to Cartesian coordinates
+  \item\code{jpolar2polar} convenience function: Jansonius polar to polar
+  \item\code{polar2jpolar} convenience function: polar to Jansonius polar
   \item\code{bundlePath} returns a function describing the expected fiber
     path given an angle of incidence on the ONH
   \item\code{loc2psi} returns the angle of incidence of the average bundle path
     that passes through specific locations of the visual field
-  \item\code{psi2oct} returns the angle of OCT circular scans corresponding
+  \item\code{psi2oct} returns the angle of an OCT circular scan corresponding
     to average bundle paths with specific angle of incidence at the ONH
+  \item\code{oct2psi} returns the angle of incidence at the ONH corresponding
+    to the angle of an OCT circular scans
   \item\code{vf2gc} calculates ganglion-cell soma locations
 }
 }
